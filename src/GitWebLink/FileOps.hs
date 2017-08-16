@@ -19,10 +19,19 @@ module GitWebLink.FileOps where
 
 import GitWebLink.Types
 import Data.Text(Text)
+import Data.List(stripPrefix)
 import qualified Data.Text as T
+import System.FilePath
 
 
 dirOrFile :: Text -> DirOrFile
-dirOrFile fp = if "/" `T.isSuffixOf` fp
-               then Dir (T.unpack . T.init $ fp)
-               else File (T.unpack fp)
+dirOrFile = (\fp -> ( if hasTrailingPathSeparator fp
+                        then Dir (init fp)
+                        else File fp)) . T.unpack
+
+normalize :: FilePath -> FilePath -> DirOrFile -> Maybe DirOrFile
+normalize root wd (Dir d) = Dir <$> norm root wd d
+normalize root wd (File f) = File <$> norm root wd f
+
+norm :: FilePath -> FilePath -> FilePath -> Maybe FilePath
+norm root wd = stripPrefix root . (wd ++)

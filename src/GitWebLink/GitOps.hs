@@ -24,7 +24,8 @@ import GitWebLink.Parsing
 import Data.List(nub)
 import Data.Map(Map, fromList)
 import Data.Maybe(catMaybes)
-import Turtle
+import Turtle hiding (FilePath)
+import qualified Data.Text as T
 
 gitRemotes :: IO [GitRemote]
 gitRemotes = runAndExtract "git" ["remote", "-v"] remoteFromLine
@@ -37,6 +38,10 @@ gitRemotesByKey = do
 
 gitBranches :: IO [(IsActive, GitBranch)]
 gitBranches = runAndExtract "git" ["branch"] branchFromLine
+
+gitRootDir :: IO FilePath
+gitRootDir = fmap (T.unpack . linesToText) $ runAndExtract "git" ["rev-parse", "--show-toplevel"] Just
+
 
 activeGitBranch :: IO GitBranch
 activeGitBranch = do
