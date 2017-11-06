@@ -16,22 +16,24 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --
 module GitWebLink.FileOps where
-
 import GitWebLink.Types
-import Data.Text(Text)
+import Control.Monad.Trans.Maybe
 import Data.List(stripPrefix)
-import qualified Data.Text as T
-import System.FilePath
+import System.Directory
 
+-- Provides a relative path from the given root
+--
+relDirOrFile :: FilePath -> FilePath -> MaybeT IO DirOrFile
+relDirOrFile root fp =
+  MaybeT $ do
+    full   <- concat . (:["/", fp]) <$> getCurrentDirectory
+    exists <- doesPathExist full
 
-dirOrFile :: Text -> DirOrFile
-dirOrFile = (\fp -> ( if hasTrailingPathSeparator fp
-                        then Dir (init fp)
-                        else File fp)) . T.unpack
+    cons   <- choose Dir File <$> doesDirectoryExist full
+    return $ if exists
+             then fmap cons (stripPrefix (root ++ "/") full)
+             else Nothing
 
-normalize :: FilePath -> FilePath -> DirOrFile -> Maybe DirOrFile
-normalize root wd (Dir d) = Dir <$> norm root wd d
-normalize root wd (File f) = File <$> norm root wd f
-
-norm :: FilePath -> FilePath -> FilePath -> Maybe FilePath
-norm root wd = stripPrefix root . (wd ++)
+choose :: a -> a -> Bool -> a
+choose a _ True  = a
+choose _ b False = b

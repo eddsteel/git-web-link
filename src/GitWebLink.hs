@@ -17,52 +17,38 @@
 --
 
 module GitWebLink(runArguments) where
-
 import GitWebLink.GitOps
 import GitWebLink.GitRemote
-import GitWebLink.GitRepository
+import GitWebLink.GitWebProvider
 import GitWebLink.Types
-import GitWebLink.FileOps(dirOrFile, normalize)
-
+import GitWebLink.FileOps(relDirOrFile)
+import Control.Monad.Trans.Maybe
 import Data.Text(Text)
 import qualified Data.Text as T
 import Network.URI
-import Turtle.Line
 import Data.Map(Map)
 import qualified Data.Map as M
-
 
 runArguments :: [Text] -> IO (Maybe URI)
 runArguments args = do
   branch <- activeGitBranch
   remotes <- gitRemotesByKey
-  root <- gitRoot
-  return $ dispatchArgs remotes branch root args
+  root <- gitRootDir
+  runMaybeT $ dispatchArgs remotes branch root args
 
-dispatchArgs :: Map Text GitRemote -> GitBranch -> (DirOrFile -> Maybe DirOrFile) -> [Text] -> Maybe URI
-dispatchArgs rs _ _ [] = Nothing
-dispatchArgs rs _ norm ("-b":branch:rest) = dispatchArgs rs branch norm rest -- turrible
-dispatchArgs rs b _ (r:[]) = M.lookup r rs >>= mainBranch b
-dispatchArgs rs b norm (r:p:[]) = M.lookup r rs >>= mainFile b (norm $ dirOrFile p)
-dispatchArgs rs b norm (r:p:l:[]) = M.lookup r rs >>= mainLine b (norm $ dirOrFile p) (int l)
-dispatchArgs rs b norm (r:p:s:e:[]) = M.lookup r rs >>= mainRange b (norm $ dirOrFile p) (int s) (int e)
-dispatchArgs _ _ _ _ = Nothing
+dispatchArgs :: Map Text GitRemote -> GitBranch -> FilePath -> [Text] -> MaybeT IO URI
+dispatchArgs rs _ root ("-b":branch:rest) = dispatchArgs rs branch root rest -- turrible
+dispatchArgs rs b _ (r:[])                = mkLinkBranch b <$> resolveProvider r rs
+dispatchArgs rs b root (r:p:[])           = mkLinkFile b <$> resolvePath root p <*> resolveProvider r rs
+dispatchArgs rs b root (r:p:l:[])         = mkLinkLine (i l) b <$> resolvePath root p <*> resolveProvider r rs
+dispatchArgs rs b root (r:p:s:e:[])       = mkLinkRange (i s) (i e) b <$> resolvePath root p <*> resolveProvider r rs
+dispatchArgs _ _ _ _                      = MaybeT $ return Nothing
 
-int :: Text -> Int
-int = read . T.unpack
+i :: Text -> Int
+i = read . T.unpack
 
-mainBranch :: GitBranch -> GitRemote -> Maybe URI
-mainBranch "master" = fmap mkLinkHome . recogniseRepo
-mainBranch b = fmap (mkLinkBranch b) . recogniseRepo
+resolveProvider :: Text -> Map Text GitRemote -> MaybeT IO GitWebProvider
+resolveProvider r rs = MaybeT . return $ M.lookup r rs >>= recogniseProvider
 
-mainFile :: GitBranch -> Maybe DirOrFile -> GitRemote -> Maybe URI
-mainFile b (Just df) = fmap (mkLinkFile b df) . recogniseRepo
-mainFile _ _ = Nothing
-
-mainLine :: GitBranch -> Maybe DirOrFile -> Int -> GitRemote -> Maybe URI
-mainLine b (Just df) i = fmap (mkLinkLine b df i) . recogniseRepo
-mainLine _ _ = Nothing
-
-mainRange :: GitBranch -> Maybe DirOrFile -> Int -> Int -> GitRemote -> Maybe URI
-mainRange b (Just df) s e = fmap (mkLinkRange b df s e) . recogniseRepo
-mainRange _ _ = Nothing
+resolvePath :: FilePath -> Text -> MaybeT IO DirOrFile
+resolvePath root path = relDirOrFile root (T.unpack path)
