@@ -23,7 +23,6 @@ import GitWebLink.Types
 import Data.Text(Text)
 import qualified Data.Text as T
 import Network.URL hiding (host)
-import Text.Regex.Base
 import Text.Regex.TDFA
 import Turtle.Line
 import System.FilePath(isValid)

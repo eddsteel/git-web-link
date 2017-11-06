@@ -17,15 +17,12 @@
 --
 
 module GitWebLink.GitRemote where
-
 import Data.Text(Text)
-import qualified Data.Text as T
-import Network.URL(URL, importURL)
+import Network.URL(URL)
 
 type GitName = Text
 type SshUser = Text
 type SshHost = Text
-
 
 -- Git Remote as understood by git-remote
 data GitRemote = HttpRemote { name :: GitName, raw :: Text, url :: URL }
