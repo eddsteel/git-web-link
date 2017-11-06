@@ -36,6 +36,13 @@ Feature complete for github/github enterprise. If remote isn't
 github.com it will assume github enterprise. It will assume dir/tree
 with a trailing '/', file/blob otherwise.
 
+### Slice 2 - v0.2
+
+Paths relative from working dir are supported, so this is actually
+useful to call from an editor. Some code renaming and clean up too.
+
+There are still some issues (documented below).
+
 ## Upcoming Features
 
 ### Unscheduled (PRs welcome)
@@ -44,9 +51,10 @@ with a trailing '/', file/blob otherwise.
   commit. `-b` may not be entirely appropriate.
 - Add bitbucket.
 - Add others. Branchable? Gitlab? Git web?
-- Normalise file paths -- run with a relative path deep in the project
-  it should work out the path relative to the project root.
 
-## Known Issues
+## Known Issues that will be tackled
 
 - You can pass a directory and a line number/range, which doesn't make sense.
+- If you're using a remote with `.git` at the end, things won't go well.
+- Project home with a branch other than master does not work well with
+  Github providers.
