@@ -15,9 +15,11 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --
-
-module GitWebLink.GitOps(gitRemotes, gitRemotesByKey, gitBranches, activeGitBranch) where
-
+module GitWebLink.GitOps( gitRemotes
+                        , gitRemotesByKey
+                        , gitBranches
+                        , activeGitBranch
+                        , gitRootDir) where
 import GitWebLink.Types
 import GitWebLink.GitRemote
 import GitWebLink.Parsing
@@ -40,7 +42,7 @@ gitBranches :: IO [(IsActive, GitBranch)]
 gitBranches = runAndExtract "git" ["branch"] branchFromLine
 
 gitRootDir :: IO FilePath
-gitRootDir = fmap (T.unpack . linesToText) $ runAndExtract "git" ["rev-parse", "--show-toplevel"] Just
+gitRootDir = fmap (T.unpack . T.strip . linesToText) $ runAndExtract "git" ["rev-parse", "--show-toplevel"] Just
 
 
 activeGitBranch :: IO GitBranch
