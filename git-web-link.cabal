@@ -20,7 +20,7 @@ library
                      , GitWebLink.GitHub
                      , GitWebLink.GitOps
                      , GitWebLink.GitRemote
-                     , GitWebLink.GitRepository
+                     , GitWebLink.GitWebProvider
                      , GitWebLink.Parsing
                      , GitWebLink.Types
   build-depends:       base >= 4.7 && < 5
