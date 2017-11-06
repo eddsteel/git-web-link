@@ -68,7 +68,7 @@ usage = putStrLn . unlines $ text
           , ""
           , "Parameters"
           , ""
-          , "(nome)                         Prints usage (this)"
+          , "(none)                         Prints usage (this)"
           , "help                           Prints usage (this)"
           , "<remote>                       Links to the project root on the given branch and remote."
           , "<remote> <file or dir path>    Links to the given blob/tree on the given branch and remote."
