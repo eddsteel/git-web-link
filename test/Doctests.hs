@@ -19,4 +19,4 @@ module Main where
 
 import Test.DocTest
 
-main = doctest ["-isrc", "src/GitWebLink/GitRepository.hs"]
+main = doctest ["-isrc", "src/GitWebLink/GitWebProvider.hs"]
