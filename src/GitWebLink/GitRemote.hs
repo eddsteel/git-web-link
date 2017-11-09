@@ -26,6 +26,6 @@ type SshHost = Text
 
 -- Git Remote as understood by git-remote
 data GitRemote = HttpRemote { name :: GitName, raw :: Text, url :: URL }
-               | SshRemote { name :: GitName, raw :: Text, user :: SshUser,
-                             sshhost :: SshHost, path :: FilePath }
+               | SshRemote  { name :: GitName, raw :: Text, user :: SshUser,
+                             sshhost :: SshHost, path :: Text}
                  deriving (Show, Eq)

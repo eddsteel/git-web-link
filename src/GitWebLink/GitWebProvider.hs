@@ -27,6 +27,7 @@ module GitWebLink.GitWebProvider( recogniseProvider
 import GitWebLink.GitHub
 import GitWebLink.GitRemote
 import GitWebLink.Types
+import Data.Text(Text)
 import qualified Data.Text as T
 import Network.URL
 import Network.URI
@@ -45,22 +46,38 @@ data GitWebProvider = GitHub { ghUser :: GHUser, ghProject :: Project }
 -- Just (GitHub {ghUser = "eddsteel", ghProject = "git-web-link"})
 -- >>> recogniseProvider (SshRemote "test1" "git@github.evilcorp.com:eddsteel/git-web-link" "git" "github.evilcorp.com" "eddsteel/git-web-link")
 -- Just (GitHubEnterprise {gheUser = "eddsteel", gheProject = "git-web-link", gheHost = Host {protocol = HTTP True, host = "github.evilcorp.com", port = Nothing}})
+-- >>> recogniseProvider (SshRemote "test1" "git@github.com:eddsteel/git-web-link.git" "git" "github.com" "eddsteel/git-web-link")
+-- Just (GitHub {ghUser = "eddsteel", ghProject = "git-web-link"})
 recogniseProvider :: GitRemote -> Maybe GitWebProvider
 recogniseProvider HttpRemote {} = Nothing
 recogniseProvider (SshRemote n r "git" "github.com" p) =
   let
-    user = takeWhile (/= '/') p
-    project = tail . dropWhile (/= '/') $ p
+    (user, rest) = T.breakOn "/" p
+    project = cleanProject rest
   in
-   Just $ GitHub (T.pack user) (T.pack project)
+   Just $ GitHub user project
 recogniseProvider (SshRemote n r "git" h p) =
   let
-    user = takeWhile (/= '/') p
-    project = tail . dropWhile (/= '/') $ p
+    (user, rest) = T.breakOn "/" p
+    project = cleanProject rest
     host = Host (HTTP True) (T.unpack h) Nothing
   in
-   Just $ GitHubEnterprise (T.pack user) (T.pack project) host
+   Just $ GitHubEnterprise user project host
 recogniseProvider SshRemote {} = Nothing
+
+
+-- | goes from /project.git to project
+--
+-- >>> cleanProject "/project"
+-- "project"
+--
+-- >>> cleanProject "/project.git"
+-- "project"
+--
+cleanProject:: Text -> Text
+cleanProject t
+  | ".git" `T.isSuffixOf` t = T.tail . T.dropEnd 4 $  t
+  | otherwise               = T.tail t
 
 -- | Link to webProvider's home (/)
 --
@@ -82,7 +99,7 @@ mkLinkFile b fp (GitHub u p) = ghURI (ghFile u p b fp) ""
 mkLinkFile b fp (GitHubEnterprise u p h) = gheURI h (ghFile u p b fp) ""
 
 -- |
--- >>> mkLinkLine "feature/fontify-binaries" (File "alpaca-mode.el") 18 (GitHub "eddsteel" "alpaca-mode")
+-- >>> mkLinkLine 18 "feature/fontify-binaries" (File "alpaca-mode.el") (GitHub "eddsteel" "alpaca-mode")
 -- https://github.com/eddsteel/alpaca-mode/blob/feature/fontify-binaries/alpaca-mode.el#L18
 mkLinkLine :: Int -> GitBranch -> DirOrFile  -> GitWebProvider -> URI
 mkLinkLine line b fp (GitHub u p) = ghURI (ghFile u p b fp) ("#L" ++ (show line))

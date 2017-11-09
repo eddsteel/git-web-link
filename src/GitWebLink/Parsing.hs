@@ -36,12 +36,12 @@ sshUserRE = "^([^@]+)@"
 sshRemoteRE :: String
 sshRemoteRE = "^([^a]+)@([^:]+):(.*)$"
 
-matchSshRemote :: String -> Maybe (SshUser, SshHost, FilePath)
+matchSshRemote :: String -> Maybe (SshUser, SshHost, Text)
 matchSshRemote t =
   let (_, _, _, matched) = t =~ sshRemoteRE :: (String, String, String, [String])
   in case matched of
     [user, host, fp] -> if isValid fp
-                        then Just $ (T.pack user, T.pack host, fp)
+                        then Just $ (T.pack user, T.pack host, T.pack fp)
                         else Nothing
     _ -> Nothing
 
