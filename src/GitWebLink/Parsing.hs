@@ -55,8 +55,8 @@ remoteFromLine l = (toTuple . take 2 . T.words . lineToText) l >>= uncurry remot
   where toTuple [a, b] = Just (a, b)
         toTuple _ = Nothing
 
-branchFromLine :: Line -> Maybe (IsActive, GitBranch)
+branchFromLine :: Line -> Maybe GitBranch
 branchFromLine = toBranch . T.words . lineToText
-  where toBranch (["*", name]) = Just (True, name)
-        toBranch ([name]) = Just (False, name)
+  where toBranch (["*", name]) = Just (ActiveBranch name)
+        toBranch ([name]) = Just (Branch name)
         toBranch _ = Nothing

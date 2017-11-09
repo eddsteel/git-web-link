@@ -22,9 +22,9 @@ import Data.Text(Text)
 import qualified Data.Text as T
 import Network.URL
 
-type GitBranch = Text
+data GitBranch = ActiveBranch Text | Branch Text deriving (Show, Eq)
 type IsActive = Bool
-data DirOrFile = Dir FilePath | File FilePath deriving (Show, Eq)
+data DirOrFile = Root | Dir FilePath | File FilePath deriving (Show, Eq)
 type GHUser = Text
 type Project = Text
 
@@ -39,3 +39,11 @@ hostProtocol h = case protocol h of
 -- nothing available for this already?
 pathJoin :: [Text] -> Text
 pathJoin parts = T.concat $ parts >>= \f -> ["/", f]
+
+isActiveBranch :: GitBranch -> IsActive
+isActiveBranch (ActiveBranch b) = True
+isActiveBranch (Branch b) = False
+
+branchName :: GitBranch -> Text
+branchName (ActiveBranch b) = b
+branchName (Branch b) = b

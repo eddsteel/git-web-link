@@ -38,7 +38,7 @@ gitRemotesByKey = do
   let names = fmap name remotes
   return . fromList $ zip names remotes
 
-gitBranches :: IO [(IsActive, GitBranch)]
+gitBranches :: IO [GitBranch]
 gitBranches = runAndExtract "git" ["branch"] branchFromLine
 
 gitRootDir :: IO FilePath
@@ -48,7 +48,7 @@ gitRootDir = fmap (T.unpack . T.strip . linesToText) $ runAndExtract "git" ["rev
 activeGitBranch :: IO GitBranch
 activeGitBranch = do
   branches <- gitBranches
-  return . snd . head . filter fst $ branches
+  return . head . filter isActiveBranch $ branches
 
 runAndExtract :: Eq a => Text -> [Text] -> (Line -> Maybe a) -> IO [a]
 runAndExtract cmd args extract = fold (inproc cmd args empty) foldLine

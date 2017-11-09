@@ -37,11 +37,12 @@ runArguments args = do
   runMaybeT $ dispatchArgs remotes branch root args
 
 dispatchArgs :: Map Text GitRemote -> GitBranch -> FilePath -> [Text] -> MaybeT IO URI
-dispatchArgs rs _ root ("-b":branch:rest) = dispatchArgs rs branch root rest -- turrible
+dispatchArgs rs _ root ("-b":branch:rest) = dispatchArgs rs (Branch branch) root rest
+dispatchArgs rs (ActiveBranch _) _ (r:[]) = mkLinkHome <$> resolveProvider r rs
 dispatchArgs rs b _ (r:[])                = mkLinkBranch b <$> resolveProvider r rs
 dispatchArgs rs b root (r:p:[])           = mkLinkFile b <$> resolvePath root p <*> resolveProvider r rs
 dispatchArgs rs b root (r:p:l:[])         = mkLinkLine (i l) b <$> resolvePath root p <*> resolveProvider r rs
-dispatchArgs rs b root (r:p:s:e:[])       = mkLinkRange (i s) (i e) b <$> resolvePath root p <*> resolveProvider r rs
+dispatchArgs rs b root (r:p:s:e:[])       = mkLinkRange (i s) (i e) b <$> resolvePath root p <*> resolveProvider r rs >>= MaybeT . return
 dispatchArgs _ _ _ _                      = MaybeT $ return Nothing
 
 i :: Text -> Int

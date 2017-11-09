@@ -87,29 +87,44 @@ mkLinkHome :: GitWebProvider -> URI
 mkLinkHome (GitHub u p) = ghURI (pathJoin [u, p]) ""
 mkLinkHome (GitHubEnterprise u p h) = gheURI h (pathJoin [u, p]) ""
 
+-- | Link to root of project on the given branch
+--
+-- >>> mkLinkBranch (Branch "master") (GitHub "foo" "bar")
+-- https://github.com/foo/bar/tree/master
+--
+-- >>> mkLinkBranch (Branch "foo") (GitHub "foo" "bar")
+-- https://github.com/foo/bar/tree/foo
+--
 mkLinkBranch :: GitBranch -> GitWebProvider -> URI
-mkLinkBranch b (GitHub u p) = ghURI (pathJoin [u, p, b]) ""
-mkLinkBranch b (GitHubEnterprise u p h) = gheURI h (pathJoin [u, p, b]) ""
+mkLinkBranch b (GitHub u p) = ghURI (ghFile u p b Root) ""
+mkLinkBranch b (GitHubEnterprise u p h) = gheURI h (ghFile u p b Root) ""
 
 -- |
--- >>> mkLinkFile "topic/bit-risky" (File "src/main.hs") (GitHub "foo" "bar")
+-- >>> mkLinkFile (Branch "topic/bit-risky") (File "src/main.hs") (GitHub "foo" "bar")
 -- https://github.com/foo/bar/blob/topic/bit-risky/src/main.hs
+-- >>> mkLinkFile (ActiveBranch "master") (Dir "src/main/java") (GitHub "enterprise" "ManagerManagerFactory")
+-- https://github.com/enterprise/ManagerManagerFactory/tree/master/src/main/java
+--
 mkLinkFile :: GitBranch -> DirOrFile -> GitWebProvider -> URI
 mkLinkFile b fp (GitHub u p) = ghURI (ghFile u p b fp) ""
 mkLinkFile b fp (GitHubEnterprise u p h) = gheURI h (ghFile u p b fp) ""
 
 -- |
--- >>> mkLinkLine 18 "feature/fontify-binaries" (File "alpaca-mode.el") (GitHub "eddsteel" "alpaca-mode")
+-- >>> mkLinkLine 18 (ActiveBranch "feature/fontify-binaries") (File "alpaca-mode.el") (GitHub "eddsteel" "alpaca-mode")
 -- https://github.com/eddsteel/alpaca-mode/blob/feature/fontify-binaries/alpaca-mode.el#L18
 mkLinkLine :: Int -> GitBranch -> DirOrFile  -> GitWebProvider -> URI
 mkLinkLine line b fp (GitHub u p) = ghURI (ghFile u p b fp) ("#L" ++ (show line))
 mkLinkLine line b fp (GitHubEnterprise u p h) = gheURI h (ghFile u p b fp) ("#L" ++ (show line))
 
--- |
--- >>> mkLinkRange 81 83 "master" (File "src/GitWebLink/GitWebProvider.hs") (GitHub "eddsteel" "git-link-remote")
--- https://github.com/eddsteel/git-link-remote/blob/master/src/GitWebLink/GitWebProvider.hs#L81-L83
-mkLinkRange :: Int -> Int -> GitBranch -> DirOrFile -> GitWebProvider -> URI
-mkLinkRange start end b fp (GitHub u p) =
+-- | Provides a link to a range in a file (if a dir or root is given, this will provide nothing)
+--
+-- >>> mkLinkRange 81 83 (Branch "master") (File "src/GitWebLink/GitWebProvider.hs") (GitHub "eddsteel" "git-link-remote")
+-- Just https://github.com/eddsteel/git-link-remote/blob/master/src/GitWebLink/GitWebProvider.hs#L81-L83
+-- >>> mkLinkRange 81 83 (Branch "master") Root (GitHub "eddsteel" "git-link-remote")
+-- Nothing
+mkLinkRange :: Int -> Int -> GitBranch -> DirOrFile -> GitWebProvider -> Maybe URI
+mkLinkRange start end b fp@(File _) (GitHub u p) = Just $
   ghURI (ghFile u p b fp) (Prelude.concat ["#L", show start, "-L", show end])
-mkLinkRange start end b fp (GitHubEnterprise u p h) =
+mkLinkRange start end b fp@(File _) (GitHubEnterprise u p h) = Just $
   gheURI h (ghFile u p b fp) (Prelude.concat ["#L", show start, "-L", show end])
+mkLinkRange _ _ _ _ _ = Nothing

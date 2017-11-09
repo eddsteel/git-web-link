@@ -43,6 +43,12 @@ useful to call from an editor. Some code renaming and clean up too.
 
 There are still some issues (documented below).
 
+### Slice 3 - v0.3
+
+Strip `.git` from link if it's there in the remote.
+Handle root dir on branch correctly for Github.
+Don't provide a URL for a line number/range if a directory, not file, is given.
+
 ## Upcoming Features
 
 ### Unscheduled (PRs welcome)
@@ -55,6 +61,3 @@ There are still some issues (documented below).
 ## Known Issues that will be tackled
 
 - You can pass a directory and a line number/range, which doesn't make sense.
-- If you're using a remote with `.git` at the end, things won't go well.
-- Project home with a branch other than master does not work well with
-  Github providers.
