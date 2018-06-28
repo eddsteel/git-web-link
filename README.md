@@ -59,10 +59,9 @@ Provide `-d'` flag to dereference -b argument (or active branch) to provide cano
 ~/src/git-web-link $ git web-link -b master origin src/GitWebLink.hs
 https://github.com/eddsteel/git-web-link/blob/master/src/GitWebLink.hs
 ~/src/git-web-link $ git web-link -b master -d origin src/GitWebLink.hs
-https://github.com/eddsteel/git-web-link/blob/21a025504a091ddf791979fa3bc3c86d37eabab9/src/GitWebLink.hs
+https://github.com/eddsteel/git-web-link/blob/a19d542032be29a43bed3a1a50b5d70d773ac52c/src/GitWebLink.hs
 ~/src/git-web-link $ git web-link -d origin
-https://github.com/eddsteel/git-web-link/tree/21a025504a091ddf791979fa3bc3c86d37eabab9
-
+https://github.com/eddsteel/git-web-link/tree/a19d542032be29a43bed3a1a50b5d70d773ac52c
 ```
 
 ## Upcoming Features
