@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- git-web-link provide links to web UIs for git projects
--- Copyright (C) 2017 Edd Steel
+-- Copyright (C) 2017-2018 Edd Steel
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ usage = putStrLn . unlines $ text
 version :: IO ()
 version = putStrLn . unlines $ text
   where text =
-          [ "git-web-link 0.1 Copyright (C) 2017 Edd Steel"
+          [ "git-web-link 0.1 Copyright (C) 2017-2018 Edd Steel"
           , ""
           , "This program comes with ABSOLUTELY NO WARRANTY."
           , "This is free software, and you are welcome to redistribute it"
