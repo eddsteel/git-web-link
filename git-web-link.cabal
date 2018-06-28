@@ -30,6 +30,7 @@ library
                      , network-uri
                      , regex-base
                      , regex-tdfa
+                     , safe
                      , text
                      , turtle
                      , transformers

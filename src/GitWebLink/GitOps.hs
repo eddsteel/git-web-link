@@ -18,6 +18,7 @@
 module GitWebLink.GitOps( gitRemotes
                         , gitRemotesByKey
                         , gitBranches
+                        , gitBranchReference
                         , activeGitBranch
                         , gitRootDir) where
 import GitWebLink.Types
@@ -27,6 +28,7 @@ import Data.List(nub)
 import Data.Map(Map, fromList)
 import Data.Maybe(catMaybes)
 import Turtle hiding (FilePath)
+import Safe(headMay)
 import qualified Data.Text as T
 
 gitRemotes :: IO [GitRemote]
@@ -44,6 +46,17 @@ gitBranches = runAndExtract "git" ["branch"] branchFromLine
 gitRootDir :: IO FilePath
 gitRootDir = fmap (T.unpack . T.strip . linesToText) $ runAndExtract "git" ["rev-parse", "--show-toplevel"] Just
 
+-- Dereference a named branch e.g. "master" to a ref e.g. "8ce13c8bed94afba0615b515f465447073b366c8".
+-- Uses `git show-ref` because
+-- > Use of this utility is encouraged in favor of directly accessing files under the .git
+-- > directory.
+--
+gitBranchReference :: GitBranch -> IO (Maybe GitBranch)
+gitBranchReference b = headMay <$> runAndExtract "git" ["show-ref", "-s", "--verify", refHead] toRef
+  where refHead = T.concat ["refs/heads/", branchName b]
+        toRef t = if T.null (lineToText t)
+                  then Nothing
+                  else Just . Reference . lineToText $ t
 
 activeGitBranch :: IO GitBranch
 activeGitBranch = do

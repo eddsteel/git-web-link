@@ -37,6 +37,7 @@ runArguments args = do
   runMaybeT $ dispatchArgs remotes branch root args
 
 dispatchArgs :: Map Text GitRemote -> GitBranch -> FilePath -> [Text] -> MaybeT IO URI
+dispatchArgs rs b root ("-d":rest)        = deref b >>= \ref -> dispatchArgs rs ref root rest
 dispatchArgs rs _ root ("-b":branch:rest) = dispatchArgs rs (Branch branch) root rest
 dispatchArgs rs (ActiveBranch _) _ (r:[]) = mkLinkHome <$> resolveProvider r rs
 dispatchArgs rs b _ (r:[])                = mkLinkBranch b <$> resolveProvider r rs
@@ -53,3 +54,6 @@ resolveProvider r rs = MaybeT . return $ M.lookup r rs >>= recogniseProvider
 
 resolvePath :: FilePath -> Text -> MaybeT IO DirOrFile
 resolvePath root path = relDirOrFile root (T.unpack path)
+
+deref :: GitBranch -> MaybeT IO GitBranch
+deref = MaybeT . gitBranchReference
