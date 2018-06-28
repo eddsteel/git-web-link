@@ -17,6 +17,8 @@ Options
 
 (none)                         Uses the currently active branch.
 -b <branch>                    Specify the branch to link to.
+-d                             Deference branch name to canonical reference
+Note: specifying -b after -d will squash it.
 
 Parameters
 
@@ -49,14 +51,32 @@ Strip `.git` from link if it's there in the remote.
 Handle root dir on branch correctly for Github.
 Don't provide a URL for a line number/range if a directory, not file, is given.
 
+### Slice 4 - v0.4
+
+Provide `-d'` flag to dereference -b argument (or active branch) to provide canonical URLs. E.g.
+
+```
+~/src/git-web-link $ git web-link -b master origin src/GitWebLink.hs
+https://github.com/eddsteel/git-web-link/blob/master/src/GitWebLink.hs
+~/src/git-web-link $ git web-link -b master -d origin src/GitWebLink.hs
+https://github.com/eddsteel/git-web-link/blob/21a025504a091ddf791979fa3bc3c86d37eabab9/src/GitWebLink.hs
+~/src/git-web-link $ git web-link -d origin
+https://github.com/eddsteel/git-web-link/tree/21a025504a091ddf791979fa3bc3c86d37eabab9
+
+```
+
 ## Upcoming Features
+
+### Slice 5 - v0.5
+
+Provide `-t` to reference by tag (with `-d` support). Refactor to talk about Refs, not Branches.
 
 ### Unscheduled (PRs welcome)
 
-- Check this supports commit hashes/ tags/ other ways of specifying a
-  commit. `-b` may not be entirely appropriate.
+- Add Gitlab.
 - Add bitbucket.
-- Add others. Branchable? Gitlab? Git web?
+- Add others. Branchable? Git web?
+- Default to remote if only one is specified.
 
 ## Known Issues that will be tackled
 
