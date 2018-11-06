@@ -29,6 +29,7 @@ data DirOrFile = Root | Dir FilePath | File FilePath deriving (Show, Eq)
 type GHUser = Text
 type Project = Text
 
+data Region = Line Int | Range Int Int
 
 hostProtocol :: Host -> String
 hostProtocol h = case protocol h of

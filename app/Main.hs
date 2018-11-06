@@ -25,10 +25,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
 -- git web-link
--- git web-link [-b <branch>] <remote>
--- git web-link [-b <branch>] <remote> <path>
--- git web-link [-b <branch>] <remote> <path> <line no>
--- git web-link [-b <branch>] <remote> <path> <start line no> <end line no>
+-- git web-link [-b <branch> -f <file or dir> -l <line or lines>] <remote>
 --
 main :: IO ()
 main = do
@@ -66,16 +63,16 @@ usage = putStrLn . unlines $ text
           , "-b <branch>                    Specify the branch to link to."
           , "-d                             Deference branch name to canonical reference"
           , "Note: specifying -b after -d will squash it."
+          , "-f                             Link to a file or directory"
+          , "-l                             Line or lines, comma-separated, only valid in conjunction with a file"
+          , "-h                             Prints usage (this)"
           , ""
           , ""
           , "Parameters"
           , ""
-          , "(none)                         Prints usage (this)"
+          , "(none)                         Prints usage (this)" -- TODO: make origin optional
           , "help                           Prints usage (this)"
-          , "<remote>                       Links to the project root on the given branch and remote."
-          , "<remote> <file or dir path>    Links to the given blob/tree on the given branch and remote."
-          , "<remote> <file path> <line>    Links to a specific line in the given file/ branch/ remote."
-          , "<remote> <file> <start> <end>  Links to a range of lines in the given file/ branch/ remote."]
+          , "<remote>                       Specifies the remote to link to, optionally including a specific branch, path and region."]
 
 version :: IO ()
 version = putStrLn . unlines $ text

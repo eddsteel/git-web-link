@@ -20,6 +20,7 @@ module GitWebLink(runArguments) where
 import GitWebLink.GitOps
 import GitWebLink.GitRemote
 import GitWebLink.GitWebProvider
+import GitWebLink.Parameters
 import GitWebLink.Types
 import GitWebLink.FileOps(relDirOrFile)
 import Control.Monad.Trans.Maybe
@@ -27,33 +28,41 @@ import Data.Text(Text)
 import qualified Data.Text as T
 import Network.URI
 import Data.Map(Map)
+import Text.Read(readMaybe)
 import qualified Data.Map as M
+import Options.Applicative(execParser)
+
+type MIO a = MaybeT IO a
 
 runArguments :: [Text] -> IO (Maybe URI)
-runArguments args = do
-  branch <- activeGitBranch
-  remotes <- gitRemotesByKey
-  root <- gitRootDir
-  runMaybeT $ dispatchArgs remotes branch root args
+runArguments args = runMaybeT $ do
+  params <- resolveParams args
+  let remote = undefined
+  remotes <- MaybeT $ Just <$> gitRemotesByKey
+  provider <- resolveProvider remote remotes
+  return $ mkLink params provider
+  
+resolveParams :: [Text] -> MIO GWLParameters
+resolveParams args = do
+  options <- MaybeT $ Just <$> execParser args
+  activeBranch <- MaybeT $ Just <$> activeGitBranch
+  let branch = fromMaybe (pBranch option) activeBranch
+  root <- MaybeT $ Just <$> gitRootDir
+  case options of
+    (Params _ (Just f) (Just i) (Just j)) ->
+      resolveFile root f >>= \g -> RegionP b g (Range i j)
+    (Params Nothing Nothing Nothing Nothing) -> HomeP
 
-dispatchArgs :: Map Text GitRemote -> GitBranch -> FilePath -> [Text] -> MaybeT IO URI
-dispatchArgs rs b root ("-d":rest)        = deref b >>= \ref -> dispatchArgs rs ref root rest
-dispatchArgs rs _ root ("-b":branch:rest) = dispatchArgs rs (Branch branch) root rest
-dispatchArgs rs (ActiveBranch _) _ (r:[]) = mkLinkHome <$> resolveProvider r rs
-dispatchArgs rs b _ (r:[])                = mkLinkBranch b <$> resolveProvider r rs
-dispatchArgs rs b root (r:p:[])           = mkLinkFile b <$> resolvePath root p <*> resolveProvider r rs
-dispatchArgs rs b root (r:p:l:[])         = mkLinkLine (i l) b <$> resolvePath root p <*> resolveProvider r rs
-dispatchArgs rs b root (r:p:s:e:[])       = mkLinkRange (i s) (i e) b <$> resolvePath root p <*> resolveProvider r rs >>= MaybeT . return
-dispatchArgs _ _ _ _                      = MaybeT $ return Nothing
-
-i :: Text -> Int
-i = read . T.unpack
-
-resolveProvider :: Text -> Map Text GitRemote -> MaybeT IO GitWebProvider
+resolveProvider :: Text -> Map Text GitRemote -> MIO GitWebProvider
 resolveProvider r rs = MaybeT . return $ M.lookup r rs >>= recogniseProvider
 
-resolvePath :: FilePath -> Text -> MaybeT IO DirOrFile
+resolvePath :: FilePath -> Text -> MIO DirOrFile
 resolvePath root path = relDirOrFile root (T.unpack path)
 
-deref :: GitBranch -> MaybeT IO GitBranch
-deref = MaybeT . gitBranchReference
+resolveFile :: FilePath -> Text -> MIO FilePath
+resolveFile root path = relDirOrFile root (T.unpack path) >>= justFiles
+  where justFiles (Dir _) = MaybeT $ pure Nothing
+        justFiles (File f) = MaybeT $ pure (Just f) 
+  
+resolveBranch :: GitBranch -> MIO GitBranch
+resolveBranch = MaybeT . gitBranchReference

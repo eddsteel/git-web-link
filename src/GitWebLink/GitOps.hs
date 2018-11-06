@@ -27,7 +27,7 @@ import GitWebLink.Parsing
 import Data.List(nub)
 import Data.Map(Map, fromList)
 import Data.Maybe(catMaybes)
-import Turtle hiding (FilePath)
+import Turtle hiding (FilePath,nub)
 import Safe(headMay)
 import qualified Data.Text as T
 

@@ -23,6 +23,7 @@ library
                      , GitWebLink.GitWebProvider
                      , GitWebLink.Parsing
                      , GitWebLink.Types
+                     , GitWebLink.Parameters
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , directory
@@ -35,6 +36,7 @@ library
                      , turtle
                      , transformers
                      , url
+                     , optparse-applicative
   default-language:    Haskell2010
 
 executable git-web-link
