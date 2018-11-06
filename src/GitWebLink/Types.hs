@@ -29,6 +29,34 @@ data DirOrFile = Root | Dir FilePath | File FilePath deriving (Show, Eq)
 type GHUser = Text
 type Project = Text
 
+data Region = Line Int | Range Int Int deriving (Show, Eq)
+
+type GitName = Text
+type SshUser = Text
+type SshHost = Text
+
+-- Git Remote as understood by git-remote
+data GitRemote = HttpRemote { name :: GitName, raw :: Text, url :: URL }
+               | SshRemote  { name :: GitName, raw :: Text, user :: SshUser,
+                              sshhost :: SshHost, sshpath :: Text}
+                 deriving (Show, Eq)
+
+-- parameters specifying what kind of link to generate
+data GWLParameters = HomeP
+                   | BranchP {branch :: GitBranch}
+                   | PathP   {branch :: GitBranch, path :: DirOrFile}
+                   | RegionP {branch :: GitBranch, region :: Region, filePath :: FilePath}
+                   deriving (Show, Eq)
+
+-- parameters provided on the command line
+data InputParameters =
+  Params { pRemote :: Maybe Text
+         , pBranch :: Maybe GitBranch
+         , pFilePath :: Maybe Text
+         , pStart :: Maybe Int
+         , pEnd :: Maybe Int
+         , pDeref :: Maybe Bool
+         } deriving Show
 
 hostProtocol :: Host -> String
 hostProtocol h = case protocol h of
@@ -47,7 +75,12 @@ isActiveBranch (ActiveBranch _) = True
 isActiveBranch (Branch _) = False
 isActiveBranch (Reference _) = False
 
-branchName :: GitBranch -> Text
-branchName (ActiveBranch b) = b
-branchName (Branch b) = b
-branchName (Reference r) = r
+nameOfBranch :: GitBranch -> Text
+nameOfBranch (ActiveBranch b) = b
+nameOfBranch (Branch b) = b
+nameOfBranch (Reference r) = r
+
+pRegion :: InputParameters -> Maybe Region
+pRegion (Params _ _ _ (Just s) (Just e) _) = Just $ Range s e
+pRegion (Params _ _ _ (Just l) Nothing _) = Just $ Line l
+pRegion _ = Nothing

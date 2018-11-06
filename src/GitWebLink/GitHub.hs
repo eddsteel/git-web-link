@@ -36,6 +36,6 @@ ghPath :: GHUser -> Project -> Text
 ghPath u p = pathJoin [u, p]
 
 ghFile :: GHUser -> Project -> GitBranch -> DirOrFile -> Text
-ghFile u p b (File fp) = pathJoin [u, p, "blob", (branchName b), (T.pack fp)]
-ghFile u p b Root = pathJoin [u, p, "tree", (branchName b)]
-ghFile u p b (Dir fp)  = pathJoin [u, p, "tree", (branchName b), (T.pack fp)]
+ghFile u p b (File fp) = pathJoin [u, p, "blob", (nameOfBranch b), (T.pack fp)]
+ghFile u p b Root = pathJoin [u, p, "tree", (nameOfBranch b)]
+ghFile u p b (Dir fp)  = pathJoin [u, p, "tree", (nameOfBranch b), (T.pack fp)]

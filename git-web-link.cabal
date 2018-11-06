@@ -1,5 +1,5 @@
 name:                git-web-link
-version:             0.3
+version:             0.5
 -- synopsis:
 -- description:
 homepage:            https://github.com/eddsteel/git-web-link#readme
@@ -19,7 +19,6 @@ library
                      , GitWebLink.FileOps
                      , GitWebLink.GitHub
                      , GitWebLink.GitOps
-                     , GitWebLink.GitRemote
                      , GitWebLink.GitWebProvider
                      , GitWebLink.Parsing
                      , GitWebLink.Types
@@ -45,6 +44,8 @@ executable git-web-link
                      , git-web-link
                      , text
                      , turtle
+                     , optparse-applicative
+                     , ansi-wl-pprint
   default-language:    Haskell2010
 
 test-suite doctests

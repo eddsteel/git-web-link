@@ -18,7 +18,6 @@
 
 module GitWebLink.Parsing(branchFromLine, remoteFromLine) where
 
-import GitWebLink.GitRemote
 import GitWebLink.Types
 import Data.Text(Text)
 import qualified Data.Text as T

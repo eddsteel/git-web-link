@@ -16,44 +16,72 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-module GitWebLink(runArguments) where
+module GitWebLink(run) where
+
+import Control.Applicative ((<|>))
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Maybe
+import Data.Map(Map)
+import Data.Maybe(fromMaybe)
+import Data.Text(Text)
+import GitWebLink.FileOps(relDirOrFile)
 import GitWebLink.GitOps
-import GitWebLink.GitRemote
 import GitWebLink.GitWebProvider
 import GitWebLink.Types
-import GitWebLink.FileOps(relDirOrFile)
-import Control.Monad.Trans.Maybe
-import Data.Text(Text)
-import qualified Data.Text as T
 import Network.URI
-import Data.Map(Map)
+import Text.Read(readMaybe)
 import qualified Data.Map as M
+import qualified Data.Text as T
 
-runArguments :: [Text] -> IO (Maybe URI)
-runArguments args = do
-  branch <- activeGitBranch
-  remotes <- gitRemotesByKey
-  root <- gitRootDir
-  runMaybeT $ dispatchArgs remotes branch root args
+type MIO a = MaybeT IO a
 
-dispatchArgs :: Map Text GitRemote -> GitBranch -> FilePath -> [Text] -> MaybeT IO URI
-dispatchArgs rs b root ("-d":rest)        = deref b >>= \ref -> dispatchArgs rs ref root rest
-dispatchArgs rs _ root ("-b":branch:rest) = dispatchArgs rs (Branch branch) root rest
-dispatchArgs rs (ActiveBranch _) _ (r:[]) = mkLinkHome <$> resolveProvider r rs
-dispatchArgs rs b _ (r:[])                = mkLinkBranch b <$> resolveProvider r rs
-dispatchArgs rs b root (r:p:[])           = mkLinkFile b <$> resolvePath root p <*> resolveProvider r rs
-dispatchArgs rs b root (r:p:l:[])         = mkLinkLine (i l) b <$> resolvePath root p <*> resolveProvider r rs
-dispatchArgs rs b root (r:p:s:e:[])       = mkLinkRange (i s) (i e) b <$> resolvePath root p <*> resolveProvider r rs >>= MaybeT . return
-dispatchArgs _ _ _ _                      = MaybeT $ return Nothing
+fromMaybeA :: Maybe a -> MIO a
+fromMaybeA = MaybeT . pure
 
-i :: Text -> Int
-i = read . T.unpack
+run :: InputParameters -> IO (Maybe URI)
+run options = runMaybeT $ do
+  let optionOr = optionWithDefault options
+  root         <- lift gitRootDir
+  deref        <- optionOr pDeref (pure True)
+  branch       <- optionOr pBranch (lift gitActiveBranch)
+  actualBranch <- resolveActualBranch deref branch
+  remote       <- optionOr pRemote (resolveRemote actualBranch)
+  _ <- lift $ putStrLn (show remote)
+  provider     <- resolveProvider remote actualBranch
+  _ <- lift $ putStrLn (show provider)
+  params       <- case (pBranch options, pFilePath options, pRegion options) of
+                    (_, (Just fp), (Just r)) -> RegionP actualBranch r <$> resolveFile root fp
+                    (_, (Just fp), _) -> PathP actualBranch <$> resolvePath root fp
+                    ((Just _), _, _) -> return $ BranchP actualBranch -- don't forget to deref
+                    _ -> return HomeP
+  _ <- lift $ putStrLn (show params)
+  return $ mkLink params provider
 
-resolveProvider :: Text -> Map Text GitRemote -> MaybeT IO GitWebProvider
-resolveProvider r rs = MaybeT . return $ M.lookup r rs >>= recogniseProvider
+optionWithDefault :: InputParameters -> (InputParameters -> Maybe a) -> MIO a -> MIO a
+optionWithDefault ip f def = fromMaybeA (f ip) <|> def
 
-resolvePath :: FilePath -> Text -> MaybeT IO DirOrFile
-resolvePath root path = relDirOrFile root (T.unpack path)
+resolveActualBranch :: Bool -> GitBranch -> MIO GitBranch
+resolveActualBranch derefBranch branch = maybeDeref branch
+  where maybeDeref = if derefBranch
+                     then lift . gitBranchReference
+                     else pure
 
-deref :: GitBranch -> MaybeT IO GitBranch
-deref = MaybeT . gitBranchReference
+resolveRemote :: GitBranch -> MIO Text
+resolveRemote branch = branchRemote <|> firstRemote <|> pure "origin"
+  where
+    branchRemote = MaybeT (gitRemoteForBranch branch)
+    firstRemote = lift (head <$> gitRemoteNames)
+
+resolveProvider :: Text -> GitBranch -> MIO GitWebProvider
+resolveProvider remote branch = do
+  remotes <- lift gitRemotesByKey
+  remote <- fromMaybeA $ M.lookup remote remotes
+  fromMaybeA $ recogniseProvider remote
+
+resolvePath :: FilePath -> Text -> MIO DirOrFile
+resolvePath root filepath = relDirOrFile root (T.unpack filepath)
+
+resolveFile :: FilePath -> Text -> MIO FilePath
+resolveFile root filepath = relDirOrFile root (T.unpack filepath) >>= justFiles
+  where justFiles (Dir _)  = fromMaybeA Nothing
+        justFiles (File f) = fromMaybeA (Just f)

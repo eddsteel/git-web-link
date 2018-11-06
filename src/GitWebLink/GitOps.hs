@@ -17,18 +17,20 @@
 --
 module GitWebLink.GitOps( gitRemotes
                         , gitRemotesByKey
+                        , gitRemoteNames
                         , gitBranches
+                        , gitBranchNames
                         , gitBranchReference
-                        , activeGitBranch
+                        , gitActiveBranch
+                        , gitRemoteForBranch
                         , gitRootDir) where
+import Control.Exception
 import GitWebLink.Types
-import GitWebLink.GitRemote
 import GitWebLink.Parsing
 import Data.List(nub)
-import Data.Map(Map, fromList)
+import Data.Map(Map, fromList, lookup)
 import Data.Maybe(catMaybes)
-import Turtle hiding (FilePath)
-import Safe(headMay)
+import Turtle hiding (FilePath,nub)
 import qualified Data.Text as T
 
 gitRemotes :: IO [GitRemote]
@@ -40,26 +42,39 @@ gitRemotesByKey = do
   let names = fmap name remotes
   return . fromList $ zip names remotes
 
+gitRemoteNames :: IO [Text]
+gitRemoteNames = fmap lineToText <$> runAndExtract "git" ["remote"] Just
+
+gitBranchNames :: IO [Text]
+gitBranchNames = fmap nameOfBranch <$> gitBranches
+
 gitBranches :: IO [GitBranch]
 gitBranches = runAndExtract "git" ["branch"] branchFromLine
 
 gitRootDir :: IO FilePath
 gitRootDir = fmap (T.unpack . T.strip . linesToText) $ runAndExtract "git" ["rev-parse", "--show-toplevel"] Just
 
+gitRemoteForBranch :: GitBranch -> IO (Maybe Text)
+gitRemoteForBranch b = run $ inproc "git" ["config", "--get", configKey] empty
+  where configKey = T.concat ["branch.", nameOfBranch b, ".pushRemote"]
+        run io = handle handler $ Just . T.strip <$> strict io
+        handler :: SomeException -> IO (Maybe Text)
+        handler _ = pure Nothing
+
 -- Dereference a named branch e.g. "master" to a ref e.g. "8ce13c8bed94afba0615b515f465447073b366c8".
 -- Uses `git show-ref` because
 -- > Use of this utility is encouraged in favor of directly accessing files under the .git
 -- > directory.
---
-gitBranchReference :: GitBranch -> IO (Maybe GitBranch)
-gitBranchReference b = headMay <$> runAndExtract "git" ["show-ref", "-s", "--verify", refHead] toRef
-  where refHead = T.concat ["refs/heads/", branchName b]
+-- If the dereference fails, the original input is just returned
+gitBranchReference :: GitBranch -> IO GitBranch
+gitBranchReference b = head <$> runAndExtract "git" ["show-ref", "-s", "--verify", refHead] toRef
+  where refHead = T.concat ["refs/heads/", nameOfBranch b]
         toRef t = if T.null (lineToText t)
-                  then Nothing
-                  else Just . Reference . lineToText $ t
+                  then Just b
+                  else Just $ Reference . lineToText $ t
 
-activeGitBranch :: IO GitBranch
-activeGitBranch = do
+gitActiveBranch :: IO GitBranch
+gitActiveBranch = do
   branches <- gitBranches
   return . head . filter isActiveBranch $ branches
 

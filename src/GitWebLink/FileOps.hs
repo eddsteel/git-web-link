@@ -28,7 +28,6 @@ relDirOrFile root fp =
   MaybeT $ do
     full   <- concat . (:["/", fp]) <$> getCurrentDirectory
     exists <- doesPathExist full
-
     cons   <- choose Dir File <$> doesDirectoryExist full
     return $ if exists
              then fmap cons (stripPrefix (root ++ "/") full)

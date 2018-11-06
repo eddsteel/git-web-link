@@ -32,26 +32,26 @@ help                           Prints usage (this)
 
 ## Completed Features
 
-### Slice 1 - v0.1
+### Slice 1 — v0.1
 
 Feature complete for github/github enterprise. If remote isn't
 github.com it will assume github enterprise. It will assume dir/tree
 with a trailing '/', file/blob otherwise.
 
-### Slice 2 - v0.2
+### Slice 2 — v0.2
 
 Paths relative from working dir are supported, so this is actually
 useful to call from an editor. Some code renaming and clean up too.
 
 There are still some issues (documented below).
 
-### Slice 3 - v0.3
+### Slice 3 — v0.3
 
 Strip `.git` from link if it's there in the remote.
 Handle root dir on branch correctly for Github.
 Don't provide a URL for a line number/range if a directory, not file, is given.
 
-### Slice 4 - v0.4
+### Slice 4 — v0.4
 
 Provide `-d'` flag to dereference -b argument (or active branch) to provide canonical URLs. E.g.
 
@@ -64,9 +64,16 @@ https://github.com/eddsteel/git-web-link/blob/a19d542032be29a43bed3a1a50b5d70d77
 https://github.com/eddsteel/git-web-link/tree/a19d542032be29a43bed3a1a50b5d70d773ac52c
 ```
 
+### Slice 5 — v0.5
+
+- Rewrite with options, not parameters.
+- Make remote an option, with fallback to branch's active remote.
+- Provide completion for branches, remotes and paths.
+
 ## Upcoming Features
 
-### Slice 5 - v0.5
+
+### Slice 6 — v0.6
 
 Provide `-t` to reference by tag (with `-d` support). Refactor to talk about Refs, not Branches.
 

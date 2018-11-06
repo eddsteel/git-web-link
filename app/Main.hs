@@ -18,72 +18,109 @@
 
 module Main where
 
-import GitWebLink(runArguments)
-
+import Control.Applicative
+import Data.Monoid (mconcat)
+import Data.Semigroup ((<>))
+import Data.Text(Text)
+import GitWebLink(run)
+import GitWebLink.GitOps
+import GitWebLink.Types
+import Options.Applicative
+import Text.PrettyPrint.ANSI.Leijen (Doc, text, line, group)
 import Turtle(arguments)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
--- git web-link
--- git web-link [-b <branch>] <remote>
--- git web-link [-b <branch>] <remote> <path>
--- git web-link [-b <branch>] <remote> <path> <line no>
--- git web-link [-b <branch>] <remote> <path> <start line no> <end line no>
---
 main :: IO ()
 main = do
-  args <- arguments
-  case args of
-    ["--help"] -> usage -- but git will intercept this.
-    ["-h"] -> usage
-    ["help"] -> usage
-    ["--version"] -> version
-    ["-v"] -> version
-    ["version"] -> version
-    args -> do
-      uri <- runArguments args
-      case uri of
-        Just u -> TIO.putStrLn (T.pack . show $ u)
-        Nothing -> TIO.putStrLn "Unable to produce link.\n" >> usage
+  -- for completion, get current branches and remotes
+  branches <- fmap T.unpack <$> gitBranchNames
+  remotes <- fmap T.unpack <$> gitRemoteNames
+  let parser = inputParameters branches remotes
+  params <- execParser parser
+  uri <- run params
+  case uri of
+    Just u -> TIO.putStrLn (T.pack . show $ u)
+    Nothing -> TIO.putStrLn "Unable to produce link.\n"
 
-usage :: IO ()
-usage = putStrLn . unlines $ text
-  where text =
-          [ "Usage: git web-link [options] [parameters]"
-          , ""
-          , "Provide a URL for the web-location of this file or dir in the given"
-          , "remote repository's web UI. Repository providers currently supported: github"
-          , "and github enterprise."
-          , ""
-          , "Example"
-          , ""
-          , "$ git web-link origin app/Main.hs 31 32"
-          , "https://github.com/eddsteel/git-web-link/blob/example/app/Main.hs#L31-L32"
-          , ""
-          , "Options"
-          , ""
-          , "(none)                         Uses the currently active branch."
-          , "-b <branch>                    Specify the branch to link to."
-          , "-d                             Deference branch name to canonical reference"
-          , "Note: specifying -b after -d will squash it."
-          , ""
-          , ""
-          , "Parameters"
-          , ""
-          , "(none)                         Prints usage (this)"
-          , "help                           Prints usage (this)"
-          , "<remote>                       Links to the project root on the given branch and remote."
-          , "<remote> <file or dir path>    Links to the given blob/tree on the given branch and remote."
-          , "<remote> <file path> <line>    Links to a specific line in the given file/ branch/ remote."
-          , "<remote> <file> <start> <end>  Links to a range of lines in the given file/ branch/ remote."]
+copyright :: String
+copyright  = "git-web-link 0.5 Copyright (C) 2017-2018 Edd Steel"
 
-version :: IO ()
-version = putStrLn . unlines $ text
-  where text =
-          [ "git-web-link 0.1 Copyright (C) 2017-2018 Edd Steel"
-          , ""
-          , "This program comes with ABSOLUTELY NO WARRANTY."
-          , "This is free software, and you are welcome to redistribute it"
-          , "under certain conditions."
-          , ""
-          , "See https://github.com/eddsteel/git-web-link/blob/master/LICENSE"]
+inputParameters :: [String] -> [String] -> ParserInfo InputParameters
+inputParameters branches remotes = info parser mods
+  where
+    parser = parseInputParameters branches remotes <**> version <**> helper
+    mods = fullDesc <> progDescDoc desc
+    desc = Just . group . mconcat $
+      [ line
+      , text "Provides a URL for the web-location of this file or dir in the given", line
+      , text "remote repository's web UI. Repository providers currently supported: github", line
+      , text "and github enterprise.", line
+      , text "Example", line
+      , line
+      , text "$ git web-link -b example -r origin -p app/Main.hs -l 31 -m 32", line
+      , text "https://github.com/eddsteel/git-web-link/blob/example/app/Main.hs#L31-L32", line]
+
+parseInputParameters :: [String] -> [String] -> Parser InputParameters
+parseInputParameters branches remotes  = Params
+                       <$> optional (remoteName remotes)
+                       <*> optional (branchName branches)
+                       <*> optional filepath
+                       <*> optional start
+                       <*> optional end
+                       <*> optional deref
+
+remoteName :: [String] -> Parser Text
+remoteName remotes = strOption remoteMods
+  where remoteMods = mconcat [ short 'r'
+                             , long "remote"
+                             , help "Link to this remote (defaults to branch default push)"
+                             , metavar "NAME"
+                             , completeWith remotes]
+
+branchName :: [String] -> Parser GitBranch
+branchName branches = Branch <$> strOption branchMods
+  where branchMods = mconcat [ short 'b'
+                             , long "branch"
+                             , help "Link to this branch (defaults to active branch)"
+                             , metavar "NAME"
+                             , completeWith branches]
+
+filepath :: Parser Text
+filepath = strOption fpMods
+  where fpMods = mconcat [ short 'p'
+                         , long "path"
+                         , help "Link to this file or directory"
+                         , metavar "FILE-OR-DIR"
+                         , action "file"
+                         , action "directory"]
+
+start :: Parser Int
+start = option auto startMods
+  where startMods = mconcat [ short 'l'
+                              , long "line"
+                              , help "Link to this line number (or range starting here, requires path option, set to a filename)"
+                              , metavar "NUM"]
+
+end :: Parser Int
+end = option auto endMods
+  where endMods = mconcat [ short 'm'
+                            , long "line-end"
+                            , help "Link to range ending here (requires start and path option, set to a filename)"
+                            , metavar "NUM"]
+
+deref :: Parser Bool
+deref = switch derefMods
+  where derefMods = mconcat [short 'd'
+                              , long "deref"
+                              , help "Dereference to commit hash in link (off by default)"]
+
+version :: Parser (a -> a)
+version = infoOption vers $ mconcat [short 'v', long "version", help "Show version information"]
+  where vers = unlines [ copyright
+                       , ""
+                       , "This program comes with ABSOLUTELY NO WARRANTY."
+                       , "This is free software, and you are welcome to redistribute it"
+                       , "under certain conditions."
+                       , ""
+                       , "See https://github.com/eddsteel/git-web-link/blob/master/LICENSE"]
