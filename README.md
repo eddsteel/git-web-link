@@ -1,33 +1,31 @@
 # git-web-link
 
 ``` shell
-$ git web-link help
-Usage: git web-link [options] [parameters]
+$ git-web-link --help
+Usage: git-web-link [-r|--remote NAME] [-b|--branch NAME]
+                    [-p|--path FILE-OR-DIR] [-l|--line NUM] [-m|--line-end NUM]
+                    [-d|--deref] [-v|--version]
 
-Provide a URL for the web-location of this file or dir in the given
-remote repository's web UI. Repository providers currently supported: github
-and github enterprise.
+  Provides a URL for the web-location of this file or dir in the given
+  remote repository's web UI. Repository providers currently supported: github
+  and github enterprise.
+  Example
 
-Example
+  $ git web-link -b example -r origin -p app/Main.hs -l 31 -m 32
+  https://github.com/eddsteel/git-web-link/blob/example/app/Main.hs#L31-L32
 
-$ git web-link origin app/Main.hs 31 32
-https://github.com/eddsteel/git-web-link/blob/example/app/Main.hs#L31-L32
 
-Options
-
-(none)                         Uses the currently active branch.
--b <branch>                    Specify the branch to link to.
--d                             Deference branch name to canonical reference
-Note: specifying -b after -d will squash it.
-
-Parameters
-
-(nome)                         Prints usage (this)
-help                           Prints usage (this)
-<remote>                       Links to the project root on the given branch and remote.
-<remote> <file or dir path>    Links to the given blob/tree on the given branch and remote.
-<remote> <file path> <line>    Links to a specific line in the given file/ branch/ remote.
-<remote> <file> <start> <end>  Links to a range of lines in the given file/ branch/ remote.
+Available options:
+  -r,--remote NAME         Link to this remote (defaults to branch default push)
+  -b,--branch NAME         Link to this branch (defaults to active branch)
+  -p,--path FILE-OR-DIR    Link to this file or directory
+  -l,--line NUM            Link to this line number (or range starting here,
+                           requires path option, set to a filename)
+  -m,--line-end NUM        Link to range ending here (requires start and path
+                           option, set to a filename)
+  -d,--deref               Dereference to commit hash in link (off by default)
+  -v,--version             Show version information
+  -h,--help                Show this help text
 ```
 
 ## Completed Features
@@ -72,7 +70,6 @@ https://github.com/eddsteel/git-web-link/tree/a19d542032be29a43bed3a1a50b5d70d77
 
 ## Upcoming Features
 
-
 ### Slice 6 — v0.6
 
 Provide `-t` to reference by tag (with `-d` support). Refactor to talk about Refs, not Branches.
@@ -82,8 +79,3 @@ Provide `-t` to reference by tag (with `-d` support). Refactor to talk about Ref
 - Add Gitlab.
 - Add bitbucket.
 - Add others. Branchable? Git web?
-- Default to remote if only one is specified.
-
-## Known Issues that will be tackled
-
-- You can pass a directory and a line number/range, which doesn't make sense.
