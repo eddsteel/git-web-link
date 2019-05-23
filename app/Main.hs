@@ -44,7 +44,7 @@ main = do
     Nothing -> TIO.putStrLn "Unable to produce link.\n"
 
 copyright :: String
-copyright  = "git-web-link 0.5 Copyright (C) 2017-2018 Edd Steel"
+copyright  = "git-web-link 0.6 Copyright (C) 2017-2019 Edd Steel"
 
 inputParameters :: [String] -> [String] -> ParserInfo InputParameters
 inputParameters branches remotes = info parser mods
@@ -69,6 +69,7 @@ parseInputParameters branches remotes  = Params
                        <*> optional start
                        <*> optional end
                        <*> optional deref
+                       <*> optional comm
 
 remoteName :: [String] -> Parser Text
 remoteName remotes = strOption remoteMods
@@ -114,6 +115,13 @@ deref = switch derefMods
   where derefMods = mconcat [short 'd'
                               , long "deref"
                               , help "Dereference to commit hash in link (off by default)"]
+
+comm :: Parser Text
+comm = strOption commitMods
+  where commitMods = mconcat [short 'c'
+                             , long "commit"
+                             , metavar "HASH"
+                             , help "Link to a commit, by hash (disregards path, branch, line, region, etc)"]
 
 version :: Parser (a -> a)
 version = infoOption vers $ mconcat [short 'v', long "version", help "Show version information"]

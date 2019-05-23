@@ -91,7 +91,11 @@ cleanProject t
 -- https://github.com/eddsteel/alpaca-mode/blob/feature/fontify-binaries/alpaca-mode.el#L18
 -- >>> mkLink (RegionP (Branch "master") (Range 81 83) "src/GitWebLink/GitWebProvider.hs") (GitHub "eddsteel" "git-link-remote")
 -- https://github.com/eddsteel/git-link-remote/blob/master/src/GitWebLink/GitWebProvider.hs#L81-L83
+-- >>> mkLink (CommitP "8ce13c8bed94afba0615b515f465447073b366c8") (GitHub "eddsteel" "git-web-link")
+-- https://github.com/eddsteel/git-web-link/commit/8ce13c8bed94afba0615b515f465447073b366c8
 mkLink :: GWLParameters -> GitWebProvider -> URI
+mkLink (CommitP commit) (GitHub u p) = ghURI (pathJoin [u, p, "commit", commit]) ""
+mkLink (CommitP commit) (GitHubEnterprise u p h) = gheURI h (pathJoin [u, p, "commit", commit]) ""
 mkLink HomeP (GitHub u p) = ghURI (pathJoin [u, p]) ""
 mkLink HomeP (GitHubEnterprise u p h) = gheURI h (pathJoin [u, p]) ""
 mkLink (BranchP b) (GitHub u p) = ghURI (ghFile u p b Root) ""

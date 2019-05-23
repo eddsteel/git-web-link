@@ -16,6 +16,7 @@ Usage: git-web-link [-r|--remote NAME] [-b|--branch NAME]
 
 
 Available options:
+Available options:
   -r,--remote NAME         Link to this remote (defaults to branch default push)
   -b,--branch NAME         Link to this branch (defaults to active branch)
   -p,--path FILE-OR-DIR    Link to this file or directory
@@ -24,6 +25,8 @@ Available options:
   -m,--line-end NUM        Link to range ending here (requires start and path
                            option, set to a filename)
   -d,--deref               Dereference to commit hash in link (off by default)
+  -c,--commit HASH         Link to a commit, by hash (disregards path, branch,
+                           line, region, etc)
   -v,--version             Show version information
   -h,--help                Show this help text
 ```
@@ -68,9 +71,13 @@ https://github.com/eddsteel/git-web-link/tree/a19d542032be29a43bed3a1a50b5d70d77
 - Make remote an option, with fallback to branch's active remote.
 - Provide completion for branches, remotes and paths.
 
+### Slice 6 - v0.6
+
+- Add `-c` to link to a commit (not a path _at_ a commit, but the web provider's commit description page).
+
 ## Upcoming Features
 
-### Slice 6 — v0.6
+### Slice 7 — v0.7
 
 Provide `-t` to reference by tag (with `-d` support). Refactor to talk about Refs, not Branches.
 

@@ -43,18 +43,17 @@ run options = runMaybeT $ do
   let optionOr = optionWithDefault options
   root         <- lift gitRootDir
   deref        <- optionOr pDeref (pure True)
+  commit       <- pure pCommit
   branch       <- optionOr pBranch (lift gitActiveBranch)
   actualBranch <- resolveActualBranch deref branch
   remote       <- optionOr pRemote (resolveRemote actualBranch)
-  _ <- lift $ putStrLn (show remote)
   provider     <- resolveProvider remote actualBranch
-  _ <- lift $ putStrLn (show provider)
-  params       <- case (pBranch options, pFilePath options, pRegion options) of
-                    (_, (Just fp), (Just r)) -> RegionP actualBranch r <$> resolveFile root fp
-                    (_, (Just fp), _) -> PathP actualBranch <$> resolvePath root fp
-                    ((Just _), _, _) -> return $ BranchP actualBranch -- don't forget to deref
-                    _ -> return HomeP
-  _ <- lift $ putStrLn (show params)
+  params       <- case (pCommit options, pBranch options, pFilePath options, pRegion options) of
+                    (Just c, _, _, _)           -> return $ CommitP c
+                    (_, _, (Just fp), (Just r)) -> RegionP actualBranch r <$> resolveFile root fp
+                    (_, _, (Just fp), _)        -> PathP actualBranch <$> resolvePath root fp
+                    (_, (Just _), _, _)         -> return $ BranchP actualBranch -- don't forget to deref
+                    _                           -> return HomeP
   return $ mkLink params provider
 
 optionWithDefault :: InputParameters -> (InputParameters -> Maybe a) -> MIO a -> MIO a

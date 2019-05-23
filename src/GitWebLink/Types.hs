@@ -43,6 +43,7 @@ data GitRemote = HttpRemote { name :: GitName, raw :: Text, url :: URL }
 
 -- parameters specifying what kind of link to generate
 data GWLParameters = HomeP
+                   | CommitP {commit :: Text}
                    | BranchP {branch :: GitBranch}
                    | PathP   {branch :: GitBranch, path :: DirOrFile}
                    | RegionP {branch :: GitBranch, region :: Region, filePath :: FilePath}
@@ -56,6 +57,7 @@ data InputParameters =
          , pStart :: Maybe Int
          , pEnd :: Maybe Int
          , pDeref :: Maybe Bool
+         , pCommit :: Maybe Text
          } deriving Show
 
 hostProtocol :: Host -> String
@@ -81,6 +83,6 @@ nameOfBranch (Branch b) = b
 nameOfBranch (Reference r) = r
 
 pRegion :: InputParameters -> Maybe Region
-pRegion (Params _ _ _ (Just s) (Just e) _) = Just $ Range s e
-pRegion (Params _ _ _ (Just l) Nothing _) = Just $ Line l
+pRegion (Params _ _ _ (Just s) (Just e) _ _) = Just $ Range s e
+pRegion (Params _ _ _ (Just l) Nothing _ _) = Just $ Line l
 pRegion _ = Nothing
