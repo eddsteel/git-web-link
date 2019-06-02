@@ -30,6 +30,7 @@ import Network.URI
 
 data GitWebProvider = GitHub { ghUser :: GHUser, ghProject :: Project }
                    | GitHubEnterprise { gheUser :: GHUser, gheProject :: Project, gheHost :: Host}
+                   | GitLab { glUser :: GLUser, glProject :: Project}
 --                 | Bitbucket {...}
 --                 | GitWeb  {...}
 --                 | ...
@@ -44,6 +45,8 @@ data GitWebProvider = GitHub { ghUser :: GHUser, ghProject :: Project }
 -- Just (GitHubEnterprise {gheUser = "eddsteel", gheProject = "git-web-link", gheHost = Host {protocol = HTTP True, host = "github.evilcorp.com", port = Nothing}})
 -- >>> recogniseProvider (SshRemote "test1" "git@github.com:eddsteel/git-web-link.git" "git" "github.com" "eddsteel/git-web-link")
 -- Just (GitHub {ghUser = "eddsteel", ghProject = "git-web-link"})
+-- >>> recogniseProvider (SshRemote "test1" "git@gitlab.com:eddsteel/git-web-link.git" "git" "gitlab.com" "eddsteel/git-web-link")
+-- Just (GitLab {glUser = "eddsteel", glProject = "git-web-link"})
 recogniseProvider :: GitRemote -> Maybe GitWebProvider
 recogniseProvider HttpRemote {} = Nothing
 recogniseProvider (SshRemote n r "git" "github.com" p) =
@@ -52,6 +55,12 @@ recogniseProvider (SshRemote n r "git" "github.com" p) =
     project = cleanProject rest
   in
    Just $ GitHub user project
+recogniseProvider (SshRemote n r "git" "gitlab.com" p) =
+  let
+    (user, rest) = T.breakOn "/" p
+    project = cleanProject rest
+  in
+   Just $ GitLab user project
 recogniseProvider (SshRemote n r "git" h p) =
   let
     (user, rest) = T.breakOn "/" p
@@ -72,8 +81,8 @@ recogniseProvider SshRemote {} = Nothing
 --
 cleanProject :: Text -> Text
 cleanProject t
-  | ".git" `T.isSuffixOf` t = T.tail . T.dropEnd 4 $  t
-  | otherwise               = T.tail t
+   | ".git" `T.isSuffixOf` t = T.tail . T.dropEnd 4 $ t
+   | otherwise               = T.tail t
 
 
 -- | Use git web provider to create a link from the given parameters
@@ -93,18 +102,41 @@ cleanProject t
 -- https://github.com/eddsteel/git-link-remote/blob/master/src/GitWebLink/GitWebProvider.hs#L81-L83
 -- >>> mkLink (CommitP "8ce13c8bed94afba0615b515f465447073b366c8") (GitHub "eddsteel" "git-web-link")
 -- https://github.com/eddsteel/git-web-link/commit/8ce13c8bed94afba0615b515f465447073b366c8
+-- >>> mkLink HomeP (GitLab "foo" "bar")
+-- https://gitlab.com/foo/bar
+-- >>> mkLink (BranchP (Branch "master")) (GitLab "foo" "bar")
+-- https://gitlab.com/foo/bar/tree/master
+-- >>> mkLink (BranchP (Branch "foo")) (GitLab "foo" "bar")
+-- https://gitlab.com/foo/bar/tree/foo
+-- >>> mkLink (PathP (Branch "topic/bit-risky") (File "src/main.hs"))  (GitLab "foo" "bar")
+-- https://gitlab.com/foo/bar/blob/topic/bit-risky/src/main.hs
+-- >>> mkLink (PathP (Branch "master") (Dir "src/main/java")) (GitLab "enterprise" "ManagerManagerFactory")
+-- https://gitlab.com/enterprise/ManagerManagerFactory/tree/master/src/main/java
+-- >>> mkLink (RegionP (Branch "feature/fontify-binaries") (Line 18) "alpaca-mode.el") (GitLab "eddsteel" "alpaca-mode")
+-- https://gitlab.com/eddsteel/alpaca-mode/blob/feature/fontify-binaries/alpaca-mode.el#L18
+-- >>> mkLink (RegionP (Branch "master") (Range 81 83) "src/GitWebLink/GitWebProvider.hs") (GitLab "eddsteel" "git-web-link")
+-- https://gitlab.com/eddsteel/git-web-link/blob/master/src/GitWebLink/GitWebProvider.hs#L81-83
+-- >>> mkLink (CommitP "8ce13c8bed94afba0615b515f465447073b366c8") (GitLab "eddsteel" "git-web-link")
+-- https://gitlab.com/eddsteel/git-web-link/commit/8ce13c8bed94afba0615b515f465447073b366c8
 mkLink :: GWLParameters -> GitWebProvider -> URI
 mkLink (CommitP commit) (GitHub u p) = ghURI (pathJoin [u, p, "commit", commit]) ""
+mkLink (CommitP commit) (GitLab u p) = glURI (pathJoin [u, p, "commit", commit]) ""
 mkLink (CommitP commit) (GitHubEnterprise u p h) = gheURI h (pathJoin [u, p, "commit", commit]) ""
 mkLink HomeP (GitHub u p) = ghURI (pathJoin [u, p]) ""
+mkLink HomeP (GitLab u p) = glURI (pathJoin [u, p]) ""
 mkLink HomeP (GitHubEnterprise u p h) = gheURI h (pathJoin [u, p]) ""
 mkLink (BranchP b) (GitHub u p) = ghURI (ghFile u p b Root) ""
+mkLink (BranchP b) (GitLab u p) = glURI (ghFile u p b Root) ""
 mkLink (BranchP b) (GitHubEnterprise u p h) = gheURI h (ghFile u p b Root) ""
 mkLink (PathP b f) (GitHub u p) = ghURI (ghFile u p b f) ""
+mkLink (PathP b f) (GitLab u p) = glURI (ghFile u p b f) ""
 mkLink (PathP b f) (GitHubEnterprise u p h) = gheURI h (ghFile u p b f) ""
 mkLink (RegionP b (Line l) f) (GitHub u p) = ghURI (ghFile u p b (File f)) ("#L" ++ (show l))
+mkLink (RegionP b (Line l) f) (GitLab u p) = glURI (ghFile u p b (File f)) ("#L" ++ (show l))
 mkLink (RegionP b (Line l) f) (GitHubEnterprise u p h) = gheURI h (ghFile u p b (File f)) ("#L" ++ (show l))
 mkLink (RegionP b (Range s e) f) (GitHub u p) =
   ghURI (ghFile u p b (File f)) (Prelude.concat ["#L", show s, "-L", show e])
+mkLink (RegionP b (Range s e) f) (GitLab u p) =
+  glURI (ghFile u p b (File f)) (Prelude.concat ["#L", show s, "-", show e])
 mkLink (RegionP b (Range s e) f) (GitHubEnterprise u p h) =
   gheURI h (ghFile u p b (File f)) (Prelude.concat ["#L", show s, "-L", show e])

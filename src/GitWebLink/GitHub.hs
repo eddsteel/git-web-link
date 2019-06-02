@@ -23,14 +23,17 @@ import Network.URL
 import Network.URI
 import GitWebLink.Types
 
-ghHost :: Host
-ghHost = Host (HTTP True) "github.com" Nothing
+glURI :: Text -> String -> URI
+glURI = githubstyle $ Host (HTTP True) "gitlab.com" Nothing
 
 ghURI :: Text -> String -> URI
-ghURI = gheURI ghHost
+ghURI = githubstyle $ Host (HTTP True) "github.com" Nothing
 
 gheURI :: Host -> Text -> String -> URI
-gheURI h p f = URI (hostProtocol h) (Just (URIAuth "" (host h) "")) (T.unpack p) "" f
+gheURI = githubstyle
+
+githubstyle :: Host -> Text -> String -> URI
+githubstyle h p f = URI (hostProtocol h) (Just (URIAuth "" (host h) "")) (T.unpack p) "" f
 
 ghPath :: GHUser -> Project -> Text
 ghPath u p = pathJoin [u, p]
