@@ -26,8 +26,7 @@ data GitBranch = ActiveBranch Text | Branch Text | Reference GitReference derivi
 type GitReference = Text
 type IsActive = Bool
 data DirOrFile = Root | Dir FilePath | File FilePath deriving (Show, Eq)
-type GHUser = Text
-type GLUser = Text
+type User = Text
 type Project = Text
 
 data Region = Line Int | Range Int Int deriving (Show, Eq)

@@ -29,16 +29,28 @@ glURI = githubstyle $ Host (HTTP True) "gitlab.com" Nothing
 ghURI :: Text -> String -> URI
 ghURI = githubstyle $ Host (HTTP True) "github.com" Nothing
 
+bbURI :: Text -> String -> URI
+bbURI = githubstyle $ Host (HTTP True) "bitbucket.org" Nothing
+
 gheURI :: Host -> Text -> String -> URI
 gheURI = githubstyle
 
 githubstyle :: Host -> Text -> String -> URI
 githubstyle h p f = URI (hostProtocol h) (Just (URIAuth "" (host h) "")) (T.unpack p) "" f
 
-ghPath :: GHUser -> Project -> Text
+ghPath :: User -> Project -> Text
 ghPath u p = pathJoin [u, p]
 
-ghFile :: GHUser -> Project -> GitBranch -> DirOrFile -> Text
+ghFile :: User -> Project -> GitBranch -> DirOrFile -> Text
 ghFile u p b (File fp) = pathJoin [u, p, "blob", (nameOfBranch b), (T.pack fp)]
 ghFile u p b Root = pathJoin [u, p, "tree", (nameOfBranch b)]
 ghFile u p b (Dir fp)  = pathJoin [u, p, "tree", (nameOfBranch b), (T.pack fp)]
+
+bbFile :: User -> Project -> GitBranch -> DirOrFile -> Text
+bbFile u p b df = pathJoin [u, p, "src", (nameOfBranch b), path df]
+  where path (Root) = T.pack ""
+        path (File f) = T.pack f
+        path (Dir d) = T.pack d
+
+bbPath :: User -> Project -> Text
+bbPath u p = pathJoin [u, p, "src", "default"]

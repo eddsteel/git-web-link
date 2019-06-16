@@ -7,8 +7,9 @@ Usage: git-web-link [-r|--remote NAME] [-b|--branch NAME]
                     [-d|--deref] [-v|--version]
 
   Provides a URL for the web-location of this file or dir in the given
-  remote repository's web UI. Repository providers currently supported: github
-  and github enterprise.
+  remote repository’s web UI. Repository providers currently supported: github,
+  bitbucket, gitlab, and github enterprise.
+
   Example
 
   $ git web-link -b example -r origin -p app/Main.hs -l 31 -m 32
@@ -71,18 +72,20 @@ https://github.com/eddsteel/git-web-link/tree/a19d542032be29a43bed3a1a50b5d70d77
 - Make remote an option, with fallback to branch's active remote.
 - Provide completion for branches, remotes and paths.
 
-### Slice 6 - v0.6
+### Slice 6 — v0.6
 
 - Add `-c` to link to a commit (not a path _at_ a commit, but the web provider's commit description page).
 
+### Slice 7  — v0.7
+
+- Add bitbucket and gitlab support.
+
 ## Upcoming Features
 
-### Slice 7 — v0.7
+### Slice 8 — v0.8
 
-Provide `-t` to reference by tag (with `-d` support). Refactor to talk about Refs, not Branches.
+Support reference by specific commit (`-c`), tag (`-t`) or branch (`-b`), with `-d` support.. Refactor to use Refs, not Branches.
 
 ### Unscheduled (PRs welcome)
 
-- Add Gitlab.
-- Add bitbucket.
 - Add others. Branchable? Git web?

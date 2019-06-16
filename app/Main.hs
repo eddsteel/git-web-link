@@ -44,7 +44,7 @@ main = do
     Nothing -> TIO.putStrLn "Unable to produce link.\n"
 
 copyright :: String
-copyright  = "git-web-link 0.6 Copyright (C) 2017-2019 Edd Steel"
+copyright  = "git-web-link 0.7 Copyright (C) 2017-2019 Edd Steel"
 
 inputParameters :: [String] -> [String] -> ParserInfo InputParameters
 inputParameters branches remotes = info parser mods
@@ -54,8 +54,8 @@ inputParameters branches remotes = info parser mods
     desc = Just . group . mconcat $
       [ line
       , text "Provides a URL for the web-location of this file or dir in the given", line
-      , text "remote repository's web UI. Repository providers currently supported: github", line
-      , text "and github enterprise.", line
+      , text "remote repository’s web UI. Repository providers currently supported: github,", line
+      , text "bitbucket, gitlab, and github enterprise.", line
       , text "Example", line
       , line
       , text "$ git web-link -b example -r origin -p app/Main.hs -l 31 -m 32", line
