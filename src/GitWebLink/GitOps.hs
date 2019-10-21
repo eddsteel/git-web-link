@@ -20,10 +20,11 @@ module GitWebLink.GitOps( gitRemotes
                         , gitRemoteNames
                         , gitBranches
                         , gitBranchNames
-                        , gitBranchReference
+                        , gitDereference
                         , gitActiveBranch
                         , gitRemoteForBranch
-                        , gitRootDir) where
+                        , gitRootDir
+                        , gitTagNames) where
 import Control.Exception
 import GitWebLink.Types
 import GitWebLink.Parsing
@@ -46,37 +47,44 @@ gitRemoteNames :: IO [Text]
 gitRemoteNames = fmap lineToText <$> runAndExtract "git" ["remote"] Just
 
 gitBranchNames :: IO [Text]
-gitBranchNames = fmap nameOfBranch <$> gitBranches
+gitBranchNames = fmap snd <$> gitBranches
 
-gitBranches :: IO [GitBranch]
+gitTagNames :: IO [Text]
+gitTagNames = fmap lineToText <$> runAndExtract "git" ["tag"] Just
+
+gitBranches :: IO [(IsActive, Text)]
 gitBranches = runAndExtract "git" ["branch"] branchFromLine
 
 gitRootDir :: IO FilePath
 gitRootDir = fmap (T.unpack . T.strip . linesToText) $ runAndExtract "git" ["rev-parse", "--show-toplevel"] Just
 
-gitRemoteForBranch :: GitBranch -> IO (Maybe Text)
-gitRemoteForBranch b = run $ inproc "git" ["config", "--get", configKey] empty
-  where configKey = T.concat ["branch.", nameOfBranch b, ".pushRemote"]
+gitRemoteForBranch :: GitReference -> IO (Maybe Text)
+gitRemoteForBranch (Branch b) = run $ inproc "git" ["config", "--get", configKey] empty
+  where configKey = T.concat ["branch.", b, ".pushRemote"]
         run io = handle handler $ Just . T.strip <$> strict io
         handler :: SomeException -> IO (Maybe Text)
         handler _ = pure Nothing
+gitRemoteForBranch _ = pure Nothing
 
--- Dereference a named branch e.g. "master" to a ref e.g. "8ce13c8bed94afba0615b515f465447073b366c8".
+-- Dereference a named branch or tag e.g. "master" to a ref e.g. "8ce13c8bed94afba0615b515f465447073b366c8".
 -- Uses `git show-ref` because
 -- > Use of this utility is encouraged in favor of directly accessing files under the .git
 -- > directory.
 -- If the dereference fails, the original input is just returned
-gitBranchReference :: GitBranch -> IO GitBranch
-gitBranchReference b = head <$> runAndExtract "git" ["show-ref", "-s", "--verify", refHead] toRef
-  where refHead = T.concat ["refs/heads/", nameOfBranch b]
-        toRef t = if T.null (lineToText t)
-                  then Just b
-                  else Just $ Reference . lineToText $ t
+gitDereference :: GitReference -> IO GitReference
+gitDereference b = head <$> runAndExtract "git" args toRef
+  where
+    args = ["show-ref", "-s", "--verify", path b]
+    path (Branch t) = T.concat ["refs/heads/", t]
+    path (Tag t) = T.concat ["refs/tags/", t]
+    toRef t = if T.null (lineToText t)
+              then Just b
+              else Just $ Reference . lineToText $ t
 
-gitActiveBranch :: IO GitBranch
+gitActiveBranch :: IO GitReference
 gitActiveBranch = do
   branches <- gitBranches
-  return . head . filter isActiveBranch $ branches
+  return . Branch . head . map snd . filter fst $ branches
 
 runAndExtract :: Eq a => Text -> [Text] -> (Line -> Maybe a) -> IO [a]
 runAndExtract cmd args extract = fold (inproc cmd args empty) foldLine

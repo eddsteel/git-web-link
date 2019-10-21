@@ -41,13 +41,13 @@ githubstyle h p f = URI (hostProtocol h) (Just (URIAuth "" (host h) "")) (T.unpa
 ghPath :: User -> Project -> Text
 ghPath u p = pathJoin [u, p]
 
-ghFile :: User -> Project -> GitBranch -> DirOrFile -> Text
-ghFile u p b (File fp) = pathJoin [u, p, "blob", (nameOfBranch b), (T.pack fp)]
-ghFile u p b Root = pathJoin [u, p, "tree", (nameOfBranch b)]
-ghFile u p b (Dir fp)  = pathJoin [u, p, "tree", (nameOfBranch b), (T.pack fp)]
+ghFile :: User -> Project -> GitReference -> DirOrFile -> Text
+ghFile u p b (File fp) = pathJoin [u, p, "blob", (nameOfRef b), (T.pack fp)]
+ghFile u p b Root = pathJoin [u, p, "tree", (nameOfRef b)]
+ghFile u p b (Dir fp)  = pathJoin [u, p, "tree", (nameOfRef b), (T.pack fp)]
 
-bbFile :: User -> Project -> GitBranch -> DirOrFile -> Text
-bbFile u p b df = pathJoin [u, p, "src", (nameOfBranch b), path df]
+bbFile :: User -> Project -> GitReference -> DirOrFile -> Text
+bbFile u p b df = pathJoin [u, p, "src", (nameOfRef b), path df]
   where path (Root) = T.pack ""
         path (File f) = T.pack f
         path (Dir d) = T.pack d

@@ -40,8 +40,8 @@ matchSshRemote t =
   let (_, _, _, matched) = t =~ sshRemoteRE :: (String, String, String, [String])
   in case matched of
     [user, host, fp] -> if isValid fp
-                        then Just $ (T.pack user, T.pack host, T.pack fp)
-                        else Nothing
+                       then Just $ (T.pack user, T.pack host, T.pack fp)
+                       else Nothing
     _ -> Nothing
 
 remoteFromRaw :: GitName -> Text -> Maybe GitRemote
@@ -54,8 +54,8 @@ remoteFromLine l = (toTuple . take 2 . T.words . lineToText) l >>= uncurry remot
   where toTuple [a, b] = Just (a, b)
         toTuple _ = Nothing
 
-branchFromLine :: Line -> Maybe GitBranch
+branchFromLine :: Line -> Maybe (IsActive, Text)
 branchFromLine = toBranch . T.words . lineToText
-  where toBranch (["*", name]) = Just (ActiveBranch name)
-        toBranch ([name]) = Just (Branch name)
+  where toBranch (["*", name]) = Just (True, name)
+        toBranch ([name]) = Just (False, name)
         toBranch _ = Nothing

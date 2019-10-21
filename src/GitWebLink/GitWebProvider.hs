@@ -85,25 +85,31 @@ cleanProject t
 -- | Use git web provider to create a link from the given parameters
 -- >>> mkLink HomeP (GitHub "foo" "bar")
 -- https://github.com/foo/bar
--- >>> mkLink (BranchP (Branch "master")) (GitHub "foo" "bar")
+-- >>> mkLink (RefP (Branch "master")) (GitHub "foo" "bar")
 -- https://github.com/foo/bar/tree/master
--- >>> mkLink (BranchP (Branch "foo")) (GitHub "foo" "bar")
+-- >>> mkLink (RefP (Branch "foo")) (GitHub "foo" "bar")
+-- https://github.com/foo/bar/tree/foo
+-- >>> mkLink (RefP (Tag "v7")) (GitHub "foo" "bar")
+-- https://github.com/foo/bar/tree/v7
+-- >>> mkLink (RefP (Branch "foo")) (GitHub "foo" "bar")
 -- https://github.com/foo/bar/tree/foo
 -- >>> mkLink (PathP (Branch "topic/bit-risky") (File "src/main.hs"))  (GitHub "foo" "bar")
 -- https://github.com/foo/bar/blob/topic/bit-risky/src/main.hs
+-- >>> mkLink (PathP (Reference "abc123") (File "src/main.hs"))  (GitHub "foo" "bar")
+-- https://github.com/foo/bar/blob/abc123/src/main.hs
 -- >>> mkLink (PathP (Branch "master") (Dir "src/main/java")) (GitHub "enterprise" "ManagerManagerFactory")
 -- https://github.com/enterprise/ManagerManagerFactory/tree/master/src/main/java
 -- >>> mkLink (RegionP (Branch "feature/fontify-binaries") (Line 18) "alpaca-mode.el") (GitHub "eddsteel" "alpaca-mode")
 -- https://github.com/eddsteel/alpaca-mode/blob/feature/fontify-binaries/alpaca-mode.el#L18
 -- >>> mkLink (RegionP (Branch "master") (Range 81 83) "src/GitWebLink/GitWebProvider.hs") (GitHub "eddsteel" "git-link-remote")
 -- https://github.com/eddsteel/git-link-remote/blob/master/src/GitWebLink/GitWebProvider.hs#L81-L83
--- >>> mkLink (CommitP "8ce13c8bed94afba0615b515f465447073b366c8") (GitHub "eddsteel" "git-web-link")
+-- >>> mkLink (CommitP (Reference "8ce13c8bed94afba0615b515f465447073b366c8")) (GitHub "eddsteel" "git-web-link")
 -- https://github.com/eddsteel/git-web-link/commit/8ce13c8bed94afba0615b515f465447073b366c8
 -- >>> mkLink HomeP (GitLab "foo" "bar")
 -- https://gitlab.com/foo/bar
--- >>> mkLink (BranchP (Branch "master")) (GitLab "foo" "bar")
+-- >>> mkLink (RefP (Branch "master")) (GitLab "foo" "bar")
 -- https://gitlab.com/foo/bar/tree/master
--- >>> mkLink (BranchP (Branch "foo")) (GitLab "foo" "bar")
+-- >>> mkLink (RefP (Branch "foo")) (GitLab "foo" "bar")
 -- https://gitlab.com/foo/bar/tree/foo
 -- >>> mkLink (PathP (Branch "topic/bit-risky") (File "src/main.hs"))  (GitLab "foo" "bar")
 -- https://gitlab.com/foo/bar/blob/topic/bit-risky/src/main.hs
@@ -113,11 +119,11 @@ cleanProject t
 -- https://gitlab.com/eddsteel/alpaca-mode/blob/feature/fontify-binaries/alpaca-mode.el#L18
 -- >>> mkLink (RegionP (Branch "master") (Range 81 83) "src/GitWebLink/GitWebProvider.hs") (GitLab "eddsteel" "git-web-link")
 -- https://gitlab.com/eddsteel/git-web-link/blob/master/src/GitWebLink/GitWebProvider.hs#L81-83
--- >>> mkLink (CommitP "8ce13c8bed94afba0615b515f465447073b366c8") (GitLab "eddsteel" "git-web-link")
+-- >>> mkLink (CommitP (Reference "8ce13c8bed94afba0615b515f465447073b366c8")) (GitLab "eddsteel" "git-web-link")
 -- https://gitlab.com/eddsteel/git-web-link/commit/8ce13c8bed94afba0615b515f465447073b366c8
 -- >>> mkLink HomeP (BitBucket "eddsteel" "git-web-link")
 -- https://bitbucket.org/eddsteel/git-web-link
--- >>> mkLink (BranchP (Branch "master")) (BitBucket "eddsteel" "git-web-link")
+-- >>> mkLink (RefP (Branch "master")) (BitBucket "eddsteel" "git-web-link")
 -- https://bitbucket.org/eddsteel/git-web-link/src/master/
 -- >>> mkLink (PathP (Branch "master") (Dir "src")) (BitBucket "eddsteel" "git-web-link")
 -- https://bitbucket.org/eddsteel/git-web-link/src/master/src
@@ -127,22 +133,28 @@ cleanProject t
 -- https://bitbucket.org/eddsteel/git-web-link/src/example/src/GitWebLink.hs#lines-23
 -- >>> mkLink (RegionP (Branch "example") (Range 23 25) "src/GitWebLink.hs") (BitBucket "eddsteel" "git-web-link")
 -- https://bitbucket.org/eddsteel/git-web-link/src/example/src/GitWebLink.hs#lines-23:25
--- >>> mkLink (CommitP "d492bb0fe1ebf3c5a116ec0787e04748666de290") (BitBucket "eddsteel" "git-web-link")
+ -- >>> mkLink (RegionP (Reference "d492bb0fe1ebf3c5a116ec0787e04748666de290") (Range 23 25) "src/GitWebLink.hs") (BitBucket "eddsteel" "git-web-link")
+-- https://bitbucket.org/eddsteel/git-web-link/src/d492bb0fe1ebf3c5a116ec0787e04748666de290/src/GitWebLink.hs#lines-23:25
+-- >>> mkLink (CommitP (Reference "d492bb0fe1ebf3c5a116ec0787e04748666de290")) (BitBucket "eddsteel" "git-web-link")
 -- https://bitbucket.org/eddsteel/git-web-link/commits/d492bb0fe1ebf3c5a116ec0787e04748666de290
 --
 mkLink :: GWLParameters -> GitWebProvider -> URI
-mkLink (CommitP commit) (GitHub u p) = ghURI (pathJoin [u, p, "commit", commit]) ""
-mkLink (CommitP commit) (GitLab u p) = glURI (pathJoin [u, p, "commit", commit]) ""
-mkLink (CommitP commit) (BitBucket u p) = bbURI (pathJoin [u, p, "commits", commit]) ""
-mkLink (CommitP commit) (GitHubEnterprise h u p) = gheURI h (pathJoin [u, p, "commit", commit]) ""
+mkLink (CommitP (Reference commit)) (GitHub u p) =
+  ghURI (pathJoin [u, p, "commit", commit]) ""
+mkLink (CommitP (Reference commit)) (GitLab u p) =
+  glURI (pathJoin [u, p, "commit", commit]) ""
+mkLink (CommitP (Reference commit)) (BitBucket u p) =
+  bbURI (pathJoin [u, p, "commits", commit]) ""
+mkLink (CommitP (Reference commit)) (GitHubEnterprise h u p) =
+  gheURI h (pathJoin [u, p, "commit", commit]) ""
 mkLink HomeP (GitHub u p) = ghURI (pathJoin [u, p]) ""
 mkLink HomeP (GitLab u p) = glURI (pathJoin [u, p]) ""
 mkLink HomeP (BitBucket u p) = bbURI (pathJoin [u, p]) ""
 mkLink HomeP (GitHubEnterprise h u p) = gheURI h (pathJoin [u, p]) ""
-mkLink (BranchP b) (GitHub u p) = ghURI (ghFile u p b Root) ""
-mkLink (BranchP b) (GitLab u p) = glURI (ghFile u p b Root) ""
-mkLink (BranchP b) (BitBucket u p) = bbURI (bbFile u p b Root) ""
-mkLink (BranchP b) (GitHubEnterprise h u p) = gheURI h (ghFile u p b Root) ""
+mkLink (RefP b) (GitHub u p) = ghURI (ghFile u p b Root) ""
+mkLink (RefP b) (GitLab u p) = glURI (ghFile u p b Root) ""
+mkLink (RefP b) (BitBucket u p) = bbURI (bbFile u p b Root) ""
+mkLink (RefP b) (GitHubEnterprise h u p) = gheURI h (ghFile u p b Root) ""
 mkLink (PathP b f) (GitHub u p) = ghURI (ghFile u p b f) ""
 mkLink (PathP b f) (GitLab u p) = glURI (ghFile u p b f) ""
 mkLink (PathP b f) (BitBucket u p) = bbURI (bbFile u p b f) ""

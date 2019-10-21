@@ -2,32 +2,32 @@
 
 ``` shell
 $ git-web-link --help
-Usage: git-web-link [-r|--remote NAME] [-b|--branch NAME]
-                    [-p|--path FILE-OR-DIR] [-l|--line NUM] [-m|--line-end NUM]
-                    [-d|--deref] [-v|--version]
+
+Usage: git-web-link [-r|--remote NAME] [-c|--commit HASH] [-t|--tag TAG]
+                    [-b|--branch BRANCH] [-p|--path FILE-OR-DIR] [-l|--line NUM]
+                    [-m|--line-end NUM] [-d|--deref] [-v|--version]
 
   Provides a URL for the web-location of this file or dir in the given
   remote repository’s web UI. Repository providers currently supported: github,
   bitbucket, gitlab, and github enterprise.
-
   Example
 
-  $ git web-link -b example -r origin -p app/Main.hs -l 31 -m 32
-  https://github.com/eddsteel/git-web-link/blob/example/app/Main.hs#L31-L32
+  $ git web-link -b example -r gitlab -p app/Main.hs -l 31 -m 32
+  https://gitlab.com/eddsteel/git-web-link/blob/example/app/Main.hs#L31-32
 
-
-Available options:
 Available options:
   -r,--remote NAME         Link to this remote (defaults to branch default push)
-  -b,--branch NAME         Link to this branch (defaults to active branch)
+  -c,--commit HASH         Link to repo at commit, or link to commit summary (if
+                           path is unspecified)
+  -t,--tag TAG             Link to repo at tag TAG
+  -b,--branch BRANCH       Link to repo at branch BRANCH (defaults to active
+                           branch if branch, tag and commit are unspecified)
   -p,--path FILE-OR-DIR    Link to this file or directory
   -l,--line NUM            Link to this line number (or range starting here,
                            requires path option, set to a filename)
   -m,--line-end NUM        Link to range ending here (requires start and path
                            option, set to a filename)
   -d,--deref               Dereference to commit hash in link (off by default)
-  -c,--commit HASH         Link to a commit, by hash (disregards path, branch,
-                           line, region, etc)
   -v,--version             Show version information
   -h,--help                Show this help text
 ```
@@ -80,11 +80,11 @@ https://github.com/eddsteel/git-web-link/tree/a19d542032be29a43bed3a1a50b5d70d77
 
 - Add bitbucket and gitlab support.
 
-## Upcoming Features
-
 ### Slice 8 — v0.8
 
-Support reference by specific commit (`-c`), tag (`-t`) or branch (`-b`), with `-d` support.. Refactor to use Refs, not Branches.
+Support reference by specific commit (`-c`), tag (`-t`) or branch (`-b`), with `-d` support. Refactor to use Refs, not Branches.
+
+## Upcoming Features
 
 ### Unscheduled (PRs welcome)
 

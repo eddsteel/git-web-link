@@ -22,8 +22,11 @@ import Data.Text(Text)
 import qualified Data.Text as T
 import Network.URL
 
-data GitBranch = ActiveBranch Text | Branch Text | Reference GitReference deriving (Show, Eq)
-type GitReference = Text
+data GitReference = Branch Text
+                  | Reference Text
+                  | Tag Text
+                  deriving (Show, Eq)
+
 type IsActive = Bool
 data DirOrFile = Root | Dir FilePath | File FilePath deriving (Show, Eq)
 type User = Text
@@ -43,21 +46,22 @@ data GitRemote = HttpRemote { name :: GitName, raw :: Text, url :: URL }
 
 -- parameters specifying what kind of link to generate
 data GWLParameters = HomeP
-                   | CommitP {commit :: Text}
-                   | BranchP {branch :: GitBranch}
-                   | PathP   {branch :: GitBranch, path :: DirOrFile}
-                   | RegionP {branch :: GitBranch, region :: Region, filePath :: FilePath}
+                   | CommitP { ref :: GitReference } -- commit summary, not repo at ref
+                   | RefP    { ref :: GitReference }
+                   | PathP   { ref :: GitReference, path :: DirOrFile }
+                   | RegionP { ref :: GitReference, region :: Region, filePath :: FilePath }
                    deriving (Show, Eq)
 
 -- parameters provided on the command line
 data InputParameters =
   Params { pRemote :: Maybe Text
-         , pBranch :: Maybe GitBranch
+         , pCommit :: Maybe GitReference
+         , pTag :: Maybe GitReference
+         , pBranch :: Maybe GitReference
          , pFilePath :: Maybe Text
          , pStart :: Maybe Int
          , pEnd :: Maybe Int
          , pDeref :: Maybe Bool
-         , pCommit :: Maybe Text
          } deriving Show
 
 hostProtocol :: Host -> String
@@ -72,17 +76,11 @@ hostProtocol h = case protocol h of
 pathJoin :: [Text] -> Text
 pathJoin parts = T.concat $ parts >>= \f -> ["/", f]
 
-isActiveBranch :: GitBranch -> IsActive
-isActiveBranch (ActiveBranch _) = True
-isActiveBranch (Branch _) = False
-isActiveBranch (Reference _) = False
-
-nameOfBranch :: GitBranch -> Text
-nameOfBranch (ActiveBranch b) = b
-nameOfBranch (Branch b) = b
-nameOfBranch (Reference r) = r
+nameOfRef :: GitReference -> Text
+nameOfRef (Branch b)    = b
+nameOfRef (Tag t)       = t
+nameOfRef (Reference r) = r
 
 pRegion :: InputParameters -> Maybe Region
-pRegion (Params _ _ _ (Just s) (Just e) _ _) = Just $ Range s e
-pRegion (Params _ _ _ (Just l) Nothing _ _) = Just $ Line l
-pRegion _ = Nothing
+pRegion Params{pStart=Just s, pEnd=Just e} = Just $ Range s e
+pRegion Params{pStart=Just l}              = Just $ Line l

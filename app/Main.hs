@@ -21,22 +21,25 @@ module Main where
 import Control.Applicative
 import Data.Monoid (mconcat)
 import Data.Semigroup ((<>))
-import Data.Text(Text)
-import GitWebLink(run)
+import Data.Text (Text)
+import Data.Version (showVersion)
+import GitWebLink (run)
 import GitWebLink.GitOps
 import GitWebLink.Types
 import Options.Applicative
+import Paths_git_web_link (version)
 import Text.PrettyPrint.ANSI.Leijen (Doc, text, line, group)
-import Turtle(arguments)
+import Turtle (arguments)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
 main :: IO ()
 main = do
-  -- for completion, get current branches and remotes
+  -- for completion, get current branches, tags and remotes
   branches <- fmap T.unpack <$> gitBranchNames
   remotes <- fmap T.unpack <$> gitRemoteNames
-  let parser = inputParameters branches remotes
+  tags <- fmap T.unpack <$> gitTagNames
+  let parser = inputParameters branches remotes tags
   params <- execParser parser
   uri <- run params
   case uri of
@@ -44,12 +47,12 @@ main = do
     Nothing -> TIO.putStrLn "Unable to produce link.\n"
 
 copyright :: String
-copyright  = "git-web-link 0.7 Copyright (C) 2017-2019 Edd Steel"
+copyright  = "git-web-link " ++ (showVersion version) ++ " Copyright (C) 2017-2019 Edd Steel"
 
-inputParameters :: [String] -> [String] -> ParserInfo InputParameters
-inputParameters branches remotes = info parser mods
+inputParameters :: [String] -> [String] -> [String] -> ParserInfo InputParameters
+inputParameters branches remotes tags = info parser mods
   where
-    parser = parseInputParameters branches remotes <**> version <**> helper
+    parser = parseInputParameters branches remotes tags <**> printVersion <**> helper
     mods = fullDesc <> progDescDoc desc
     desc = Just . group . mconcat $
       [ line
@@ -58,18 +61,20 @@ inputParameters branches remotes = info parser mods
       , text "bitbucket, gitlab, and github enterprise.", line
       , text "Example", line
       , line
-      , text "$ git web-link -b example -r origin -p app/Main.hs -l 31 -m 32", line
-      , text "https://github.com/eddsteel/git-web-link/blob/example/app/Main.hs#L31-L32", line]
+      , text "$ git web-link -b example -r gitlab -p app/Main.hs -l 31 -m 32", line
+      , text "https://gitlab.com/eddsteel/git-web-link/blob/example/app/Main.hs#L31-32"
+      , line]
 
-parseInputParameters :: [String] -> [String] -> Parser InputParameters
-parseInputParameters branches remotes  = Params
+parseInputParameters :: [String] -> [String] -> [String] -> Parser InputParameters
+parseInputParameters branches remotes tags = Params
                        <$> optional (remoteName remotes)
+                       <*> optional comm
+                       <*> optional (tag tags)
                        <*> optional (branchName branches)
                        <*> optional filepath
                        <*> optional start
                        <*> optional end
                        <*> optional deref
-                       <*> optional comm
 
 remoteName :: [String] -> Parser Text
 remoteName remotes = strOption remoteMods
@@ -79,12 +84,12 @@ remoteName remotes = strOption remoteMods
                              , metavar "NAME"
                              , completeWith remotes]
 
-branchName :: [String] -> Parser GitBranch
+branchName :: [String] -> Parser GitReference
 branchName branches = Branch <$> strOption branchMods
   where branchMods = mconcat [ short 'b'
                              , long "branch"
-                             , help "Link to this branch (defaults to active branch)"
-                             , metavar "NAME"
+                                , help "Link to repo at branch BRANCH (defaults to active branch if branch, tag and commit are unspecified)"
+                             , metavar "BRANCH"
                              , completeWith branches]
 
 filepath :: Parser Text
@@ -113,18 +118,27 @@ end = option auto endMods
 deref :: Parser Bool
 deref = switch derefMods
   where derefMods = mconcat [short 'd'
-                              , long "deref"
-                              , help "Dereference to commit hash in link (off by default)"]
+                            , long "deref"
+                            , help "Dereference to commit hash in link (off by default)"]
 
-comm :: Parser Text
-comm = strOption commitMods
+comm :: Parser GitReference
+comm = Reference <$> strOption commitMods
   where commitMods = mconcat [short 'c'
                              , long "commit"
                              , metavar "HASH"
-                             , help "Link to a commit, by hash (disregards path, branch, line, region, etc)"]
+                             , help "Link to repo at commit, or link to commit summary (if path is unspecified)"]
 
-version :: Parser (a -> a)
-version = infoOption vers $ mconcat [short 'v', long "version", help "Show version information"]
+tag :: [String] -> Parser GitReference
+tag tags = Tag <$> strOption tagMods
+  where tagMods = mconcat [short 't'
+                          , long "tag"
+                          , metavar "TAG"
+                          , help "Link to repo at tag TAG"
+                          , completeWith tags
+                          ]
+
+printVersion :: Parser (a -> a)
+printVersion = infoOption vers $ mconcat [short 'v', long "version", help "Show version information"]
   where vers = unlines [ copyright
                        , ""
                        , "This program comes with ABSOLUTELY NO WARRANTY."

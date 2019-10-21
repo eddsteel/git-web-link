@@ -40,38 +40,42 @@ fromMaybeA = MaybeT . pure
 
 run :: InputParameters -> IO (Maybe URI)
 run options = runMaybeT $ do
-  let optionOr = optionWithDefault options
-  root         <- lift gitRootDir
-  deref        <- optionOr pDeref (pure True)
-  commit       <- pure pCommit
-  branch       <- optionOr pBranch (lift gitActiveBranch)
-  actualBranch <- resolveActualBranch deref branch
-  remote       <- optionOr pRemote (resolveRemote actualBranch)
-  provider     <- resolveProvider remote actualBranch
-  params       <- case (pCommit options, pBranch options, pFilePath options, pRegion options) of
-                    (Just c, _, _, _)           -> return $ CommitP c
-                    (_, _, (Just fp), (Just r)) -> RegionP actualBranch r <$> resolveFile root fp
-                    (_, _, (Just fp), _)        -> PathP actualBranch <$> resolvePath root fp
-                    (_, (Just _), _, _)         -> return $ BranchP actualBranch -- don't forget to deref
-                    _                           -> return HomeP
+  let optionOr  = optionWithDefault options
+  root      <- lift gitRootDir
+  deref     <- optionOr pDeref  $ pure True
+  branch    <- optionOr pBranch $ lift gitActiveBranch
+  remote    <- optionOr pRemote $ resolveRemote branch
+  reference <- preferredReference options <|> pure branch
+  provider  <- resolveProvider remote reference
+  params    <- case (pCommit options, pBranch options, pFilePath options, pRegion options) of
+    (Just c, _, Nothing, _)     -> return $ CommitP c
+    (_, _, (Just fp), (Just r)) -> RegionP reference r <$> resolveFile root fp
+    (_, _, (Just fp), _)        -> PathP reference <$> resolvePath root fp
+    (_, (Just _), _, _)         -> return $ RefP reference
+    _                           -> return HomeP
   return $ mkLink params provider
 
 optionWithDefault :: InputParameters -> (InputParameters -> Maybe a) -> MIO a -> MIO a
-optionWithDefault ip f def = fromMaybeA (f ip) <|> def
+optionWithDefault ip f def = (MaybeT . pure . f) ip <|> def
 
-resolveActualBranch :: Bool -> GitBranch -> MIO GitBranch
-resolveActualBranch derefBranch branch = maybeDeref branch
-  where maybeDeref = if derefBranch
-                     then lift . gitBranchReference
-                     else pure
+namedReference :: InputParameters -> Maybe GitReference
+namedReference o = pCommit o <|> pTag o <|> pBranch o
 
-resolveRemote :: GitBranch -> MIO Text
+derefReference :: InputParameters -> Maybe GitReference -> MaybeT IO GitReference
+derefReference Params{pDeref=Just True} (Just ref) = lift . gitDereference $ ref
+derefReference _ (Just ref) = pure ref
+derefReference _ _ = MaybeT $ pure Nothing
+
+preferredReference :: InputParameters -> MaybeT IO GitReference
+preferredReference options = derefReference options $ namedReference options
+
+resolveRemote :: GitReference -> MIO Text
 resolveRemote branch = branchRemote <|> firstRemote <|> pure "origin"
   where
     branchRemote = MaybeT (gitRemoteForBranch branch)
     firstRemote = lift (head <$> gitRemoteNames)
 
-resolveProvider :: Text -> GitBranch -> MIO GitWebProvider
+resolveProvider :: Text -> GitReference -> MIO GitWebProvider
 resolveProvider remote branch = do
   remotes <- lift gitRemotesByKey
   remote <- fromMaybeA $ M.lookup remote remotes

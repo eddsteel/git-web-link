@@ -1,5 +1,5 @@
 name:                git-web-link
-version:             0.7
+version:             0.8
 -- synopsis:
 -- description:
 homepage:            https://github.com/eddsteel/git-web-link#readme
@@ -46,6 +46,7 @@ executable git-web-link
                      , turtle
                      , optparse-applicative
                      , ansi-wl-pprint
+  other-modules:     Paths_git_web_link
   default-language:    Haskell2010
 
 test-suite doctests
