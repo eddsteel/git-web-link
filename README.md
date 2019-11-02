@@ -84,6 +84,10 @@ https://github.com/eddsteel/git-web-link/tree/a19d542032be29a43bed3a1a50b5d70d77
 
 Support reference by specific commit (`-c`), tag (`-t`) or branch (`-b`), with `-d` support. Refactor to use Refs, not Branches.
 
+### Slice 9 — v0.9
+
+Switch to hpack, update stack and GHC.
+
 ## Upcoming Features
 
 ### Unscheduled (PRs welcome)

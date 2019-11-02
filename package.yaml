@@ -1,0 +1,57 @@
+name: git-web-link
+version: 0.9
+github: "eddsteel/git-web-link"
+license: GPL-3
+author: Edd Steel <edd@eddsteel.com>
+copyright: "GPL"
+extra-source-files:
+- README.md
+description: Please see the README on GitHub at <https://github.com/eddsteel/git-web-link#readme>
+dependencies:
+- base >= 4.7 && < 5
+- containers
+- directory
+- filepath
+- network-uri
+- regex-base
+- regex-tdfa
+- safe
+- text
+- turtle
+- transformers
+- url
+library:
+  source-dirs: src
+  exposed-modules:
+  - GitWebLink
+  - GitWebLink.FileOps
+  - GitWebLink.GitHub
+  - GitWebLink.GitOps
+  - GitWebLink.GitWebProvider
+  - GitWebLink.Parsing
+  - GitWebLink.Types
+executables:
+  git-web-link:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - git-web-link
+    - text
+    - turtle
+    - optparse-applicative
+    - ansi-wl-pprint
+tests:
+  doctests:
+    main: Doctests.hs
+    source-dirs: test
+    dependencies:
+      - git-web-link
+      - doctest
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
