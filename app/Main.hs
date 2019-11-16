@@ -19,6 +19,7 @@
 module Main where
 
 import Control.Applicative
+import Control.Monad (void)
 import Data.Monoid (mconcat)
 import Data.Semigroup ((<>))
 import Data.Text (Text)
@@ -30,6 +31,7 @@ import Options.Applicative
 import Paths_git_web_link (version)
 import Text.PrettyPrint.ANSI.Leijen (Doc, text, line, group)
 import Turtle (arguments)
+import Web.Browser(openBrowser)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
@@ -43,8 +45,11 @@ main = do
   params <- execParser parser
   uri <- run params
   case uri of
-    Just u -> TIO.putStrLn (T.pack . show $ u)
+    Just u -> printOrOpen (pOpen params) u
     Nothing -> TIO.putStrLn "Unable to produce link.\n"
+
+printOrOpen :: Show u => Bool -> u -> IO ()
+printOrOpen b = (if b then void . openBrowser else putStrLn) . show
 
 copyright :: String
 copyright  = "git-web-link " ++ (showVersion version) ++ " Copyright (C) 2017-2019 Edd Steel"
@@ -74,7 +79,8 @@ parseInputParameters branches remotes tags = Params
                        <*> optional filepath
                        <*> optional start
                        <*> optional end
-                       <*> optional deref
+                       <*> deref
+                       <*> open
 
 remoteName :: [String] -> Parser Text
 remoteName remotes = strOption remoteMods
@@ -120,6 +126,12 @@ deref = switch derefMods
   where derefMods = mconcat [short 'd'
                             , long "deref"
                             , help "Dereference to commit hash in link (off by default)"]
+
+open :: Parser Bool
+open = switch openMods
+  where openMods = mconcat [short 'o'
+                           , long "open"
+                           , help "Open link in default browser (off by default)"]
 
 comm :: Parser GitReference
 comm = Reference <$> strOption commitMods

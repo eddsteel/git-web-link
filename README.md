@@ -5,7 +5,7 @@ $ git-web-link --help
 
 Usage: git-web-link [-r|--remote NAME] [-c|--commit HASH] [-t|--tag TAG]
                     [-b|--branch BRANCH] [-p|--path FILE-OR-DIR] [-l|--line NUM]
-                    [-m|--line-end NUM] [-d|--deref] [-v|--version]
+                    [-m|--line-end NUM] [-d|--deref] [-o|--open] [-v|--version]
 
   Provides a URL for the web-location of this file or dir in the given
   remote repository’s web UI. Repository providers currently supported: github,
@@ -14,6 +14,7 @@ Usage: git-web-link [-r|--remote NAME] [-c|--commit HASH] [-t|--tag TAG]
 
   $ git web-link -b example -r gitlab -p app/Main.hs -l 31 -m 32
   https://gitlab.com/eddsteel/git-web-link/blob/example/app/Main.hs#L31-32
+
 
 Available options:
   -r,--remote NAME         Link to this remote (defaults to branch default push)
@@ -28,6 +29,7 @@ Available options:
   -m,--line-end NUM        Link to range ending here (requires start and path
                            option, set to a filename)
   -d,--deref               Dereference to commit hash in link (off by default)
+  -o,--open                Open link in default browser (off by default)
   -v,--version             Show version information
   -h,--help                Show this help text
 ```
@@ -87,6 +89,10 @@ Support reference by specific commit (`-c`), tag (`-t`) or branch (`-b`), with `
 ### Slice 9 — v0.9
 
 Switch to hpack, update stack and GHC.
+
+### Slice 10 - v0.10
+
+Actually don't deref by default, add open flag (`-o`) to open in platform browser.
 
 ## Upcoming Features
 

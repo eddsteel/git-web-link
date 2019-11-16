@@ -42,7 +42,7 @@ run :: InputParameters -> IO (Maybe URI)
 run options = runMaybeT $ do
   let optionOr  = optionWithDefault options
   root      <- lift gitRootDir
-  deref     <- optionOr pDeref  $ pure True
+  let deref =  pDeref options
   branch    <- optionOr pBranch $ lift gitActiveBranch
   remote    <- optionOr pRemote $ resolveRemote branch
   reference <- preferredReference options <|> pure branch
@@ -62,7 +62,7 @@ namedReference :: InputParameters -> Maybe GitReference
 namedReference o = pCommit o <|> pTag o <|> pBranch o
 
 derefReference :: InputParameters -> Maybe GitReference -> MaybeT IO GitReference
-derefReference Params{pDeref=Just True} (Just ref) = lift . gitDereference $ ref
+derefReference Params{pDeref=True} (Just ref) = lift . gitDereference $ ref
 derefReference _ (Just ref) = pure ref
 derefReference _ _ = MaybeT $ pure Nothing
 

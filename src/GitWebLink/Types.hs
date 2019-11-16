@@ -61,7 +61,8 @@ data InputParameters =
          , pFilePath :: Maybe Text
          , pStart :: Maybe Int
          , pEnd :: Maybe Int
-         , pDeref :: Maybe Bool
+         , pDeref :: Bool
+         , pOpen :: Bool
          } deriving Show
 
 hostProtocol :: Host -> String

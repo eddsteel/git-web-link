@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e0fa68108ac460af1e93131651ac8c939da59a752eba64806184c7be1476abb2
+-- hash: faca4d5684e00434023a4ffd7c17c1e32223a9c43d3c7bc6be91b13265e4cb3b
 
 name:           git-web-link
 version:        0.9
@@ -67,6 +67,7 @@ executable git-web-link
     , filepath
     , git-web-link
     , network-uri
+    , open-browser
     , optparse-applicative
     , regex-base
     , regex-tdfa
