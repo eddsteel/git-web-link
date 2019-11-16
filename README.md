@@ -1,6 +1,6 @@
 # git-web-link
 
-``` shell
+```
 $ git-web-link --help
 
 Usage: git-web-link [-r|--remote NAME] [-c|--commit HASH] [-t|--tag TAG]
@@ -57,7 +57,7 @@ Don't provide a URL for a line number/range if a directory, not file, is given.
 
 ### Slice 4 — v0.4
 
-Provide `-d'` flag to dereference -b argument (or active branch) to provide canonical URLs. E.g.
+Provide `-d` flag to dereference -b argument (or active branch) to provide canonical URLs. E.g.
 
 ```
 ~/src/git-web-link $ git web-link -b master origin src/GitWebLink.hs
@@ -84,15 +84,15 @@ https://github.com/eddsteel/git-web-link/tree/a19d542032be29a43bed3a1a50b5d70d77
 
 ### Slice 8 — v0.8
 
-Support reference by specific commit (`-c`), tag (`-t`) or branch (`-b`), with `-d` support. Refactor to use Refs, not Branches.
+- Support reference by specific commit (`-c`), tag (`-t`) or branch (`-b`), with `-d` support. Refactor to use Refs, not Branches.
 
 ### Slice 9 — v0.9
 
-Switch to hpack, update stack and GHC.
+- Switch to hpack, update stack and GHC.
 
-### Slice 10 - v0.10
+### Slice 10 — v0.10
 
-Actually don't deref by default, add open flag (`-o`) to open in platform browser.
+- Actually don't deref by default, add open flag (`-o`) to open in platform browser.
 
 ## Upcoming Features
 
