@@ -26,8 +26,9 @@ module GitWebLink.GitOps( gitRemotes
                         , gitRootDir
                         , gitTagNames) where
 import Control.Exception
-import GitWebLink.Types
 import GitWebLink.Parsing
+import GitWebLink.Paths(git)
+import GitWebLink.Types
 import Data.List(nub)
 import Data.Map(Map, fromList, lookup)
 import Data.Maybe(catMaybes)
@@ -35,7 +36,7 @@ import Turtle hiding (FilePath,nub)
 import qualified Data.Text as T
 
 gitRemotes :: IO [GitRemote]
-gitRemotes = runAndExtract "git" ["remote", "-v"] remoteFromLine
+gitRemotes = runAndExtract git ["remote", "-v"] remoteFromLine
 
 gitRemotesByKey :: IO (Map Text GitRemote)
 gitRemotesByKey = do
@@ -44,22 +45,22 @@ gitRemotesByKey = do
   return . fromList $ zip names remotes
 
 gitRemoteNames :: IO [Text]
-gitRemoteNames = fmap lineToText <$> runAndExtract "git" ["remote"] Just
+gitRemoteNames = fmap lineToText <$> runAndExtract git ["remote"] Just
 
 gitBranchNames :: IO [Text]
 gitBranchNames = fmap snd <$> gitBranches
 
 gitTagNames :: IO [Text]
-gitTagNames = fmap lineToText <$> runAndExtract "git" ["tag"] Just
+gitTagNames = fmap lineToText <$> runAndExtract git ["tag"] Just
 
 gitBranches :: IO [(IsActive, Text)]
-gitBranches = runAndExtract "git" ["branch"] branchFromLine
+gitBranches = runAndExtract git ["branch"] branchFromLine
 
 gitRootDir :: IO FilePath
-gitRootDir = fmap (T.unpack . T.strip . linesToText) $ runAndExtract "git" ["rev-parse", "--show-toplevel"] Just
+gitRootDir = fmap (T.unpack . T.strip . linesToText) $ runAndExtract git ["rev-parse", "--show-toplevel"] Just
 
 gitRemoteForBranch :: GitReference -> IO (Maybe Text)
-gitRemoteForBranch (Branch b) = run $ inproc "git" ["config", "--get", configKey] empty
+gitRemoteForBranch (Branch b) = run $ inproc git ["config", "--get", configKey] empty
   where configKey = T.concat ["branch.", b, ".pushRemote"]
         run io = handle handler $ Just . T.strip <$> strict io
         handler :: SomeException -> IO (Maybe Text)
@@ -72,7 +73,7 @@ gitRemoteForBranch _ = pure Nothing
 -- > directory.
 -- If the dereference fails, the original input is just returned
 gitDereference :: GitReference -> IO GitReference
-gitDereference b = head <$> runAndExtract "git" args toRef
+gitDereference b = head <$> runAndExtract git args toRef
   where
     args = ["show-ref", "-s", "--verify", path b]
     path (Branch t) = T.concat ["refs/heads/", t]
