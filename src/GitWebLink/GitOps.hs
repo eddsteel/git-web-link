@@ -78,6 +78,7 @@ gitDereference b = head <$> runAndExtract git args toRef
     args = ["show-ref", "-s", "--verify", path b]
     path (Branch t) = T.concat ["refs/heads/", t]
     path (Tag t) = T.concat ["refs/tags/", t]
+    path (Reference t) = t
     toRef t = if T.null (lineToText t)
               then Just b
               else Just $ Reference . lineToText $ t

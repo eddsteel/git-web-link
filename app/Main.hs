@@ -52,7 +52,7 @@ printOrOpen :: Show u => Bool -> u -> IO ()
 printOrOpen b = (if b then void . openBrowser else putStrLn) . show
 
 copyright :: String
-copyright  = "git-web-link " ++ (showVersion version) ++ " Copyright (C) 2017-2019 Edd Steel"
+copyright  = "git-web-link " ++ (showVersion version) ++ " Copyright (C) 2017-2022 Edd Steel"
 
 inputParameters :: [String] -> [String] -> [String] -> ParserInfo InputParameters
 inputParameters branches remotes tags = info parser mods
