@@ -85,3 +85,4 @@ nameOfRef (Reference r) = r
 pRegion :: InputParameters -> Maybe Region
 pRegion Params{pStart=Just s, pEnd=Just e} = Just $ Range s e
 pRegion Params{pStart=Just l}              = Just $ Line l
+pRegion _                                  = Nothing
